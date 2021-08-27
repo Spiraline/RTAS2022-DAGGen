@@ -1,7 +1,4 @@
 from random import randint
-import sys
-import os
-import csv
 
 # get [mean, stdev] and return mean +- stdev random number
 def rand_uniform(arr):
@@ -9,41 +6,6 @@ def rand_uniform(arr):
         raise ValueError('should pass positive stdev : %d, %d' % (arr[0], arr[1]))
 
     return randint(int(arr[0] - arr[1]), int(arr[0] + arr[1]))
-
-class Task(object):
-    idx = 0
-    def __init__(self, **kwargs):
-        self.tid = Task.idx
-        Task.idx += 1
-        self.name = kwargs.get('name', '')
-        self.exec_t = kwargs.get('exec_t', 30.0)
-
-        # Assigned after DAGGen
-        self.parent = []
-        self.child = []
-        self.isLeaf = False
-        self.deadline = -1
-        self.level = 0
-
-    def __str__(self):
-        # res = "%-9s exec_t : %.1f, parent : %20s child : %30s" \
-        #     % ('[' + self.name + ']', self.exec_t, self.parent, self.child)
-
-        # if self.isLeaf:
-        #     res += " DL : %s" % (self.deadline)
-
-        res = "%-9s %-5.1f %40s %40s" \
-            % ('[' + self.name + ']', self.exec_t, self.parent, self.child)
-
-        if self.isLeaf:
-            res += "%7s" % (self.deadline)
-        else:
-            res += "   ---  "
-
-        return res
-
-    def new_task_set(self):
-        Task.idx = 0
 
 class DAGGen(object):
     def __init__(self, **kwargs):
