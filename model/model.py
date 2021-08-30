@@ -10,7 +10,6 @@ class Node(object):
         self.parent = []
         self.child = []
         self.isLeaf = False
-        self.deadline = -1
         self.level = 0
 
         # Assigned after CPCGen
@@ -32,15 +31,17 @@ class Node(object):
 
 class DAG(object):
     def __init__(self, **kwargs):
-        self.task_set = []
-        self.start_node = kwargs.get('start_node', [2, 1])
-        self.sl_idx = kwargs.get('sl_idx', 0)
+        self.node_set = []
+        self.start_node_idx = kwargs.get('start_node_idx', 0)
+        self.critical_path = []
+        self.sl_node_idx = kwargs.get('sl_node_idx', 0)
         self.dangling_idx = kwargs.get('dangling_idx', [])
+        self.adj_matrix = kwargs.get('adj_matrix', [])
 
     def __str__(self):
         print("%-9s %-5s %39s %40s %8s" % ('name', 'exec_t', 'parent node', 'child node', 'deadline'))
-        for task in self.task_set:
-            print(task)
+        for node in self.node_set:
+            print(node)
         
         return ''
 
