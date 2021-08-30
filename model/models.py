@@ -36,7 +36,8 @@ class DAG(object):
         self.critical_path = []
         self.sl_node_idx = kwargs.get('sl_node_idx', 0)
         self.dangling_idx = kwargs.get('dangling_idx', [])
-        self.adj_matrix = kwargs.get('adj_matrix', [])
+        # For saving dag info
+        self.dag_dict = {}
 
     def __str__(self):
         print("%-9s %-5s %39s %40s %8s" % ('name', 'exec_t', 'parent node', 'child node', 'deadline'))
