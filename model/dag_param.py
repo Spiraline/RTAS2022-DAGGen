@@ -1,4 +1,4 @@
-from random import randint
+from random import randint, shuffle
 from models import Node, DAG
 import math
 
@@ -61,15 +61,6 @@ def assign_looping(dag, critical_path, dangling_num):
     start_idx = critical_path[sl_node_idx_in_cp]
     end_idx = critical_path[sl_node_idx_in_cp + dangling_len - 1]
 
-
-
-
-
-    dangling_node = []
-
-    dag.sl_node_idx = sl_node_idx
-    dag.dangling_idx = dangling_node
-
 def generate_random_dag(**kwargs):
     node_num = randuniform(kwargs.get('node_num', [20, 3]))
     depth = randuniform(kwargs.get('depth', [3.5, 0.5]))
@@ -84,8 +75,7 @@ def generate_random_dag(**kwargs):
     ### 1. Initialize node
     for i in range(node_num):
         node_param = {
-            "name" : "node" + str(i),
-            "exec_t" : randuniform(_exec_t)
+            "name" : "node" + str(i)
         }
 
         dag.node_set.append(Node(**node_param))
@@ -173,7 +163,7 @@ def generate_random_dag(**kwargs):
                 child_node.parent.append(parent_idx)
                 parent_node.child.append(child_idx)
 
-    ### 3. Make arc
+    ### 4. Make arc
     # make arc from last level
     for level in range(depth-1, 0, -1):
         for node_idx in level_arr[level]:
@@ -214,6 +204,17 @@ def generate_random_dag(**kwargs):
                 arc_added_flag = True
             
             failCnt += 1
+
+    ### 5. Make critical path's length longest
+    exec_t_arr = [randuniform(_exec_t) for _ in range(node_num)]
+    exec_t_arr.sort()
+    critical_list = [i for i in range(node_num) if i in dag.critical_path]
+    non_critical_list = [i for i in range(node_num) if i not in dag.critical_path]
+    shuffle(critical_list)
+    shuffle(non_critical_list)
+
+    for i in range(node_num):
+        dag.node_set[(non_critical_list + critical_list)[i]].exec_t = exec_t_arr[i]
 
     # sort index
     for node in dag.node_set:
