@@ -1,6 +1,7 @@
 from random import randint, shuffle
 from models import Node, DAG
 import math
+import csv
 
 # get [mean, stdev] and return mean +- stdev random number
 def randuniform(arr):
@@ -11,55 +12,6 @@ def randuniform(arr):
 
 def randarr(arr):
     return arr[randint(0, len(arr)-1)]
-
-def argmax(value_list, index_list=None):
-    if index_list is None :
-        index_list = list(range(len(value_list)))
-    max_index, max_value = [index_list[0], value_list[index_list[0]]]
-    for i in index_list :
-        if value_list[i] > max_value :
-            max_index = i
-            max_value = value_list[i]
-    return max_index
-
-def calculate_critical_path(dag):
-    distance = [0,] * len(dag.node_set)
-    indegree = [0,] * len(dag.node_set)
-    node_queue = []
-    for i in range(len(dag.node_set)):
-        if dag.node_set[i].level == 0:
-            node_queue.append(dag.node_set[i])
-            distance[i] = dag.node_set[i].exec_t
-
-    for i, v in enumerate(dag.node_set):
-        indegree[i] = len(v.parent)
-
-    while node_queue:
-        vertex = node_queue.pop(0)
-        for v in vertex.child:
-            distance[v] = max(dag.node_set[v].exec_t + distance[vertex.tid], distance[v]) 
-            indegree[v] -= 1
-            if indegree[v] == 0:
-                node_queue.append(dag.node_set[v])
-
-    cp = []
-    cv = argmax(distance)
-
-    while True :
-        cp.append(cv)
-        if len(dag.node_set[cv].parent) == 0 :
-            break
-        cv = argmax(distance, dag.node_set[cv].parent)
-
-    cp.reverse()
-    return cp
-
-def assign_looping(dag, critical_path, dangling_num):
-    dangling_len = math.ceil(dangling_num / 3)
-    sl_node_idx_in_cp = randint(1, len(critical_path)/2)
-
-    start_idx = critical_path[sl_node_idx_in_cp]
-    end_idx = critical_path[sl_node_idx_in_cp + dangling_len - 1]
 
 def generate_random_dag(**kwargs):
     node_num = randuniform(kwargs.get('node_num', [20, 3]))
@@ -103,6 +55,8 @@ def generate_random_dag(**kwargs):
             level_arr[level].append(idx)
             dag.node_set[idx].level = level
             idx += 1
+
+    dag.start_node_idx = level_arr[0]
 
     ### 3. Assign critical path, dangling nodes
     # Add edge for critical path
@@ -220,7 +174,7 @@ def generate_random_dag(**kwargs):
         node.parent.sort()
 
     ### 5. Saving DAG info
-    dag.dict["isBackup"] = False
+    # dag.dict["isBackup"] = False
     dag.dict["node_num"] = node_num
     dag.dict["start_node_idx"] = dag.start_node_idx
     dag.dict["sl_node_idx"] = dag.sl_node_idx
@@ -267,11 +221,16 @@ def generate_from_dict(dict):
 
     return dag
 
-def export_dag_dict(dag):
-    pass
-
-def export_dag_file(dag):
-    pass
+def export_dag_file(dag, file_name):
+    with open(file_name, 'w', newline='') as f:
+        wr = csv.writer(f)
+        wr.writerow([dag.dict["node_num"]])
+        wr.writerow(dag.dict["start_node_idx"])
+        wr.writerow([dag.dict["sl_node_idx"]])
+        wr.writerow(dag.dict["dangling_idx"])
+        wr.writerow(dag.dict["critical_path"])
+        wr.writerow(dag.dict["exec_t"])
+        wr.writerows(dag.dict["adj_matrix"])
 
 if __name__ == "__main__":
     dag_param_1 = {
@@ -297,6 +256,25 @@ if __name__ == "__main__":
     dag = generate_random_dag(**dag_param_1)
     dag2 = generate_from_dict(dag.dict)
 
+    export_dag_file(dag2, 'hi.csv')
+
+    with open('hi.csv', 'r', newline='') as f:
+        rd = csv.reader(f)
+        dag_dict = {}
+
+        dag_dict["node_num"] = int(next(rd)[0])
+        dag_dict["start_node_idx"] = [int(e) for e in next(rd)]
+        dag_dict["sl_node_idx"] = int(next(rd)[0])
+        dag_dict["dangling_idx"] = [int(e) for e in next(rd)]
+        dag_dict["critical_path"] = [int(e) for e in next(rd)]
+        dag_dict["exec_t"] = [int(e) for e in next(rd)]
+        adj = []
+        for line in rd:
+            adj.append([int(e) for e in line])
+        dag_dict["adj_matrix"] = adj
+
+        dag3 = generate_from_dict(dag_dict)
+
     print(dag)
-    print(dag2)
+    print(dag3)
 
