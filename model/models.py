@@ -19,11 +19,6 @@ class Node(object):
         res = "%-9s %-5.1f %40s %40s" \
             % ('[' + self.name + ']', self.exec_t, self.parent, self.child)
 
-        if self.isLeaf:
-            res += "%7s" % (self.deadline)
-        else:
-            res += "   ---  "
-
         return res
 
     def new_task_set(self):
@@ -40,7 +35,7 @@ class DAG(object):
         self.dag_dict = {}
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s %8s" % ('name', 'exec_t', 'parent node', 'child node', 'deadline'))
+        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'parent node', 'child node'))
         for node in self.node_set:
             print(node)
         
@@ -54,7 +49,7 @@ class CPC(object):
         self.dangling_idx = kwargs.get('dangling_idx', [])
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s %8s" % ('name', 'exec_t', 'parent node', 'child node', 'deadline'))
+        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'parent node', 'child node'))
         for task in self.task_set:
             print(task)
         

@@ -115,36 +115,72 @@ def generate_random_dag(**kwargs):
             idx += 1
 
     ### 3. Assign critical path, dangling nodes
+    # Add edge for critical path
     for level in range(len(level_arr)):
         dag.critical_path.append(randarr(level_arr[level]))
 
-    dangling_node_num = math.ceil(node_num * _dangling_node_ratio)
+    print(dag.critical_path)
+    
+    for idx in range(len(dag.critical_path)-1):
+        parent_node = dag.node_set[dag.critical_path[idx]]
+        child_node = dag.node_set[dag.critical_path[idx+1]]
+        parent_node.child.append(dag.critical_path[idx+1])
+        child_node.parent.append(dag.critical_path[idx])
+
+    # Assign dangling nodes 
+
+    dangling_node_num = round(node_num * _dangling_node_ratio)
     average_width = math.ceil(node_num / depth)
     dangling_len = math.ceil(dangling_node_num / average_width * 1.5)
 
-    print(dangling_node_num, dangling_len)
-
-    # only one node is dangling node
-    if dangling_len != 1:
+    while min(math.ceil(depth/2), depth - dangling_len - 2) < 1:
+        dangling_len -= 1
 
     start_level = randint(1, min(math.ceil(depth/2), depth - dangling_len - 2))
     end_level = start_level + dangling_len
 
-    sl_node_idx = randarr(level_arr[start_level])
-    dangling_end_node_idx = randarr(level_arr[end_level])
+    # Assign self-looping node
+    sl_node_idx = dag.critical_path[start_level]
+    dag.sl_node_idx = sl_node_idx
+
+    dangling_dag = [sl_node_idx]
+    dangling_level_dag = [[sl_node_idx]]
+    
+    for level in range(start_level+1, end_level+1):
+        dangling_dag.append(dag.critical_path[level])
+        dangling_level_dag.append([dag.critical_path[level]])
+
+    failCnt = 0
+    while len(dangling_dag) < dangling_node_num and failCnt < 10:
+        level = randint(start_level+1, end_level)
+        new_node = randarr(level_arr[level])
+        if new_node not in dangling_level_dag[level - start_level]:
+            dangling_dag.append(new_node)
+            dangling_level_dag[level - start_level].append(new_node)
+            failCnt = 0
+        else:
+            failCnt += 1
+
+    print(dangling_level_dag)
 
     # Make arc among dangling nodes
-
-
+    for level in range(dangling_len, 0, -1):
+        for child_idx in dangling_level_dag[level]:
+            child_node = dag.node_set[child_idx]
+            if len(child_node.parent) == 0:
+                parent_idx = randarr(dangling_level_dag[level-1])
+                parent_node = dag.node_set[parent_idx]
+                child_node.parent.append(parent_idx)
+                parent_node.child.append(child_idx)
 
     ### 3. Make arc
     # make arc from last level
     for level in range(depth-1, 0, -1):
         for node_idx in level_arr[level]:
-            parent_idx = level_arr[level-1][randint(0, len(level_arr[level - 1])-1)]
-
-            dag.node_set[parent_idx].child.append(node_idx)
-            dag.node_set[node_idx].parent.append(parent_idx)
+            if node_idx not in dangling_dag:
+                parent_idx = randarr(level_arr[level-1])
+                dag.node_set[parent_idx].child.append(node_idx)
+                dag.node_set[node_idx].parent.append(parent_idx)
 
     # make sure all node have child except sink node
     for level in range(0, depth-1):
@@ -179,19 +215,12 @@ def generate_random_dag(**kwargs):
             
             failCnt += 1
 
-    ### 4. Set critical path, self-looping node, dangling node
-    dag.critical_path = calculate_critical_path(dag)
-
-    # dangling_node_num = math.ceil(node_num * _dangling_node_ratio)
-
-    
-
-    ### sort index
+    # sort index
     for node in dag.node_set:
         node.child.sort()
         node.parent.sort()
 
-    ## 5. Saving DAG info
+    ### 5. Saving DAG info
 
     return dag
 
@@ -211,11 +240,21 @@ if __name__ == "__main__":
         "exec_t" : [50.0, 30.0],
         "start_node" : [1, 0],
         "end_node" : [1, 0],
-        "extra_arc_ratio" : 0.1
+        "extra_arc_ratio" : 0.1,
+        "dangling_node_ratio" : 0.2,
+    }
+
+    dag_param_2 = {
+        "node_num" : [40, 5],
+        "depth" : [5.5, 1.5],
+        "exec_t" : [50.0, 30.0],
+        "start_node" : [1, 0],
+        "end_node" : [1, 0],
+        "extra_arc_ratio" : 0.1,
+        "dangling_node_ratio" : 0.2,
     }
 
     dag = generate_random_dag(**dag_param_1)
-    # cp = calculate_critical_path(dag)
 
     print(dag)
     # print(cp)
