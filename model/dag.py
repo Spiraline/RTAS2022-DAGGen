@@ -1,7 +1,11 @@
 from random import randint, shuffle
-from models import Node, DAG
 import math
 import csv
+
+if __name__ == "__main__":
+    from models import Node, DAG
+else:
+    from .models import Node, DAG
 
 # get [mean, stdev] and return mean +- stdev random number
 def randuniform(arr):
@@ -231,6 +235,61 @@ def export_dag_file(dag, file_name):
         wr.writerow(dag.dict["critical_path"])
         wr.writerow(dag.dict["exec_t"])
         wr.writerows(dag.dict["adj_matrix"])
+
+def generate_backup_dag_dict(dict, backup_ratio):
+    backup_dict = {}
+
+    dangling_idx = dict["dangling_idx"]
+    sl_node_idx = dict["sl_node_idx"]
+    dangling_idx.remove(sl_node_idx)
+    node_list = [i for i in range(dict["node_num"]+1) if i not in dangling_idx]
+    # last node is backup_node
+
+    node_num = len(node_list)
+    backup_dict["node_num"] = node_num
+    backup_dict["start_node_idx"] = dict["start_node_idx"]
+    backup_dict["sl_node_idx"] = dict["sl_node_idx"]
+    backup_dict["dangling_idx"] = [dict["sl_node_idx"]]
+
+    backup_dict["critical_path"] = [i for i in dict["critical_path"] if i not in dangling_idx]
+    backup_dict["critical_path"].append(dict["node_num"])
+
+    # Calculate backup node execution time
+    backup_exec_t = 0
+    for idx in dangling_idx:
+        backup_exec_t += dict["exec_t"][idx]
+    backup_exec_t = round(backup_exec_t * backup_ratio)
+
+    exec_t_arr = []
+    for idx in node_list[:-1]:
+        exec_t_arr.append(dict["exec_t"][idx])
+    exec_t_arr.append(backup_exec_t)
+
+    backup_dict["exec_t"] = exec_t_arr
+
+    # Regenerate adj matrix
+    adj_matrix = []
+    for _ in range(node_num):
+        adj_matrix.append([0, ] * node_num)
+
+    for parent_idx in range(dict["node_num"]):
+        for child_idx in range(dict["node_num"]):
+            if dict["adj_matrix"][parent_idx][child_idx] == 1:
+                new_p_idx = parent_idx
+                new_c_idx = child_idx
+                if parent_idx in dangling_idx:
+                    new_p_idx = dict["node_num"]
+                if child_idx in dangling_idx:
+                    new_c_idx = dict["node_num"]
+                
+                if new_p_idx != new_c_idx:
+                    i = node_list.index(new_p_idx)
+                    j = node_list.index(new_c_idx)
+                    adj_matrix[i][j] = 1
+    
+    backup_dict["adj_matrix"] = adj_matrix
+
+    return backup_dict
 
 if __name__ == "__main__":
     dag_param_1 = {
