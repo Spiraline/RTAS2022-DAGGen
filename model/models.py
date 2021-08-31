@@ -32,7 +32,7 @@ class DAG(object):
         self.sl_node_idx = kwargs.get('sl_node_idx', 0)
         self.dangling_idx = kwargs.get('dangling_idx', [])
         # For saving dag info
-        self.dag_dict = {}
+        self.dict = {}
 
     def __str__(self):
         print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'parent node', 'child node'))

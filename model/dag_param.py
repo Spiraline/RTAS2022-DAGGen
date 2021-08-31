@@ -108,8 +108,6 @@ def generate_random_dag(**kwargs):
     # Add edge for critical path
     for level in range(len(level_arr)):
         dag.critical_path.append(randarr(level_arr[level]))
-
-    print(dag.critical_path)
     
     for idx in range(len(dag.critical_path)-1):
         parent_node = dag.node_set[dag.critical_path[idx]]
@@ -151,8 +149,6 @@ def generate_random_dag(**kwargs):
         else:
             failCnt += 1
 
-    print(dangling_level_dag)
-
     # Make arc among dangling nodes
     for level in range(dangling_len, 0, -1):
         for child_idx in dangling_level_dag[level]:
@@ -162,6 +158,8 @@ def generate_random_dag(**kwargs):
                 parent_node = dag.node_set[parent_idx]
                 child_node.parent.append(parent_idx)
                 parent_node.child.append(child_idx)
+
+    dag.dangling_idx = dangling_dag
 
     ### 4. Make arc
     # make arc from last level
@@ -222,11 +220,52 @@ def generate_random_dag(**kwargs):
         node.parent.sort()
 
     ### 5. Saving DAG info
+    dag.dict["isBackup"] = False
+    dag.dict["node_num"] = node_num
+    dag.dict["start_node_idx"] = dag.start_node_idx
+    dag.dict["sl_node_idx"] = dag.sl_node_idx
+    dag.dict["dangling_idx"] = dag.dangling_idx
+    dag.dict["critical_path"] = dag.critical_path
+    dag.dict["exec_t"] = [node.exec_t for node in dag.node_set]
+    adj_matrix = []
+    
+    for node in dag.node_set:
+        adj_row = [0 for _ in range(node_num)]
+        for child_idx in node.child:
+            adj_row[child_idx] = 1
+        
+        adj_matrix.append(adj_row)
+    
+    dag.dict["adj_matrix"] = adj_matrix
 
     return dag
 
-def generate_from_file(dict):
-    pass
+def generate_from_dict(dict):
+    dag = DAG()
+    dag.dict = dict
+    node_num = dict["node_num"]
+
+    ### 1. Initialize node
+    for i in range(node_num):
+        node_param = {
+            "name" : "node" + str(i),
+            "exec_t" : dict["exec_t"][i]
+        }
+
+        dag.node_set.append(Node(**node_param))
+
+    dag.start_node_idx = dict["start_node_idx"]
+    dag.critical_path = dict["critical_path"]
+    dag.sl_node_idx = dict["sl_node_idx"]
+    dag.dangling_idx = dict["dangling_idx"]
+
+    for parent_idx in range(node_num):
+        for child_idx in range(node_num):
+            if dict["adj_matrix"][parent_idx][child_idx] == 1:
+                dag.node_set[parent_idx].child.append(child_idx)
+                dag.node_set[child_idx].parent.append(parent_idx)
+
+    return dag
 
 def export_dag_dict(dag):
     pass
@@ -256,7 +295,8 @@ if __name__ == "__main__":
     }
 
     dag = generate_random_dag(**dag_param_1)
+    dag2 = generate_from_dict(dag.dict)
 
     print(dag)
-    # print(cp)
+    print(dag2)
 
