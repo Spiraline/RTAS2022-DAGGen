@@ -16,7 +16,7 @@ class Node(object):
         self.priority = 0
         self.anc = []                                           # A list of v_j's ancestor nodes
         self.desc = []                                          # A list of v_j's descendent nodes
-        self.concurrent_group = []                              # A list of nodes that can concurrently executes
+        self.C = []                                             # A list of nodes that can concurrently executes
         self.non_critical_group = []                            # Intersection of non critical nodes and concurrent nodes
         self.interference_group = []                            # A list of interfering nodes
         self.interference_group_priority = []                   # A list of interfering nodes considering priority
