@@ -7,17 +7,27 @@ class Node(object):
         self.exec_t = kwargs.get('exec_t', 30.0)
 
         # Assigned after DAGGen
-        self.parent = []
-        self.child = []
+        self.pred = []
+        self.succ = []
         self.isLeaf = False
         self.level = 0
 
         # Assigned after CPCGen
         self.priority = 0
+        self.anc = []                                           # A list of v_j's ancestor nodes
+        self.desc = []                                          # A list of v_j's descendent nodes
+        self.concurrent_group = []                              # A list of nodes that can concurrently executes
+        self.non_critical_group = []                            # Intersection of non critical nodes and concurrent nodes
+        self.interference_group = []                            # A list of interfering nodes
+        self.interference_group_priority = []                   # A list of interfering nodes considering priority
+
+        self.priority = -1                                      # v_j's priority
+        self.actual_delay = 0                                   # v_j's actual delay from interference group considering priority
+        self.finish_time = -1
 
     def __str__(self):
         res = "%-9s %-5.1f %40s %40s" \
-            % ('[' + self.name + ']', self.exec_t, self.parent, self.child)
+            % ('[' + self.name + ']', self.exec_t, self.pred, self.succ)
 
         return res
 
@@ -35,7 +45,7 @@ class DAG(object):
         self.dict = {}
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'parent node', 'child node'))
+        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'pred node', 'succ node'))
         for node in self.node_set:
             print(node)
         
@@ -43,14 +53,20 @@ class DAG(object):
 
 class CPC(object):
     def __init__(self, **kwargs):
-        self.task_set = []
-        self.start_node = kwargs.get('start_node', [2, 1])
-        self.sl_idx = kwargs.get('sl_idx', 0)
-        self.dangling_idx = kwargs.get('dangling_idx', [])
+        self.node_set = []
+        self.critical_path = []
+        self.sl_node_idx = []
+        self.provider_group = []
+        self.F = []
+        self.G = []
+        self.core_num = kwargs.get('core_num', 4.0)
+        self.alpha = []
+        self.beta = []
+        self.res_t = []
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'parent node', 'child node'))
-        for task in self.task_set:
+        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'pred node', 'succ node'))
+        for task in self.node_set:
             print(task)
         
         return ''

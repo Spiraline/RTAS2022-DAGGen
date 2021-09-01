@@ -2,6 +2,7 @@ import argparse
 import math
 from numpy.random import normal
 from model.dag import generate_random_dag, generate_backup_dag_dict, generate_from_dict
+from model.cpc import construct_cpc
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -67,10 +68,14 @@ if __name__ == '__main__':
         "dangling_node_ratio" : args.dangling
     }
 
-    dag = generate_random_dag(**dag_param)
-
-    backup_dag_dict = generate_backup_dag_dict(dag.dict, args.backup)
+    ### Make DAG and backup DAG
+    normal_dag = generate_random_dag(**dag_param)
+    backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, args.backup)
     backup_dag = generate_from_dict(backup_dag_dict)
 
-    # print(dag)
-    # print(backup_dag)
+    ### Make CPC model and assign priority
+
+    print(normal_dag)
+    normal_cpc = construct_cpc(normal_dag)
+
+    ### Check feasibility with FP

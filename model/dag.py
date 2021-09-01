@@ -62,16 +62,19 @@ def generate_random_dag(**kwargs):
 
     dag.start_node_idx = level_arr[0]
 
+    for node_idx in level_arr[-1]:
+        dag.node_set[node_idx].isLeaf = True
+
     ### 3. Assign critical path, dangling nodes
     # Add edge for critical path
     for level in range(len(level_arr)):
         dag.critical_path.append(randarr(level_arr[level]))
     
     for idx in range(len(dag.critical_path)-1):
-        parent_node = dag.node_set[dag.critical_path[idx]]
-        child_node = dag.node_set[dag.critical_path[idx+1]]
-        parent_node.child.append(dag.critical_path[idx+1])
-        child_node.parent.append(dag.critical_path[idx])
+        pred_node = dag.node_set[dag.critical_path[idx]]
+        succ_node = dag.node_set[dag.critical_path[idx+1]]
+        pred_node.succ.append(dag.critical_path[idx+1])
+        succ_node.pred.append(dag.critical_path[idx])
 
     # Assign dangling nodes 
 
@@ -109,13 +112,13 @@ def generate_random_dag(**kwargs):
 
     # Make arc among dangling nodes
     for level in range(dangling_len, 0, -1):
-        for child_idx in dangling_level_dag[level]:
-            child_node = dag.node_set[child_idx]
-            if len(child_node.parent) == 0:
-                parent_idx = randarr(dangling_level_dag[level-1])
-                parent_node = dag.node_set[parent_idx]
-                child_node.parent.append(parent_idx)
-                parent_node.child.append(child_idx)
+        for succ_idx in dangling_level_dag[level]:
+            succ_node = dag.node_set[succ_idx]
+            if len(succ_node.pred) == 0:
+                pred_idx = randarr(dangling_level_dag[level-1])
+                pred_node = dag.node_set[pred_idx]
+                succ_node.pred.append(pred_idx)
+                pred_node.succ.append(succ_idx)
 
     dag.dangling_idx = dangling_dag
 
@@ -123,24 +126,18 @@ def generate_random_dag(**kwargs):
     # make arc from last level
     for level in range(depth-1, 0, -1):
         for node_idx in level_arr[level]:
-            if node_idx not in dangling_dag:
-                parent_idx = randarr(level_arr[level-1])
-                dag.node_set[parent_idx].child.append(node_idx)
-                dag.node_set[node_idx].parent.append(parent_idx)
+            if len(dag.node_set[node_idx].pred) == 0 :
+                pred_idx = randarr(level_arr[level-1])
+                dag.node_set[pred_idx].succ.append(node_idx)
+                dag.node_set[node_idx].pred.append(pred_idx)
 
-    # make sure all node have child except sink node
+    # make sure all node have succ except sink node
     for level in range(0, depth-1):
         for node_idx in level_arr[level]:
-            if len(dag.node_set[node_idx].child) == 0 :
-                child_idx = level_arr[level+1][randint(0, len(level_arr[level+1])-1)]
-                dag.node_set[node_idx].child.append(child_idx)
-                dag.node_set[child_idx].parent.append(node_idx)
-
-    for node_idx in level_arr[depth-1] :
-        if len(dag.node_set[node_idx].parent) == 0 :
-            parent_idx = level_arr[depth-2][randint(0, len(level_arr[depth-2])-1)]
-            dag.node_set[parent_idx].child.append(node_idx)
-            dag.node_set[node_idx].parent.append(parent_idx)
+            if len(dag.node_set[node_idx].succ) == 0 :
+                succ_idx = level_arr[level+1][randint(0, len(level_arr[level+1])-1)]
+                dag.node_set[node_idx].succ.append(succ_idx)
+                dag.node_set[succ_idx].pred.append(node_idx)
 
     # make extra arc
     for i in range(extra_arc_num):
@@ -150,16 +147,16 @@ def generate_random_dag(**kwargs):
             node1_idx = randint(0, node_num-2)
             node2_idx = randint(0, node_num-2)
 
-            if dag.node_set[node1_idx].level < dag.node_set[node2_idx].level and node2_idx not in dag.node_set[node1_idx].child:
-                dag.node_set[node1_idx].child.append(node2_idx)
-                dag.node_set[node2_idx].parent.append(node1_idx)
+            if dag.node_set[node1_idx].level < dag.node_set[node2_idx].level and node2_idx not in dag.node_set[node1_idx].succ:
+                dag.node_set[node1_idx].succ.append(node2_idx)
+                dag.node_set[node2_idx].pred.append(node1_idx)
                 arc_added_flag = True
-            elif dag.node_set[node1_idx].level > dag.node_set[node2_idx].level and node1_idx not in dag.node_set[node2_idx].child:
-                dag.node_set[node2_idx].child.append(node1_idx)
-                dag.node_set[node1_idx].parent.append(node2_idx)
+            elif dag.node_set[node1_idx].level > dag.node_set[node2_idx].level and node1_idx not in dag.node_set[node2_idx].succ:
+                dag.node_set[node2_idx].succ.append(node1_idx)
+                dag.node_set[node1_idx].pred.append(node2_idx)
                 arc_added_flag = True
-            
-            failCnt += 1
+            else:
+                failCnt += 1
 
     ### 5. Make critical path's length longest
     exec_t_arr = [randuniform(_exec_t) for _ in range(node_num)]
@@ -174,8 +171,8 @@ def generate_random_dag(**kwargs):
 
     # sort index
     for node in dag.node_set:
-        node.child.sort()
-        node.parent.sort()
+        node.succ.sort()
+        node.pred.sort()
 
     ### 5. Saving DAG info
     # dag.dict["isBackup"] = False
@@ -189,8 +186,8 @@ def generate_random_dag(**kwargs):
     
     for node in dag.node_set:
         adj_row = [0 for _ in range(node_num)]
-        for child_idx in node.child:
-            adj_row[child_idx] = 1
+        for succ_idx in node.succ:
+            adj_row[succ_idx] = 1
         
         adj_matrix.append(adj_row)
     
@@ -217,11 +214,15 @@ def generate_from_dict(dict):
     dag.sl_node_idx = dict["sl_node_idx"]
     dag.dangling_idx = dict["dangling_idx"]
 
-    for parent_idx in range(node_num):
-        for child_idx in range(node_num):
-            if dict["adj_matrix"][parent_idx][child_idx] == 1:
-                dag.node_set[parent_idx].child.append(child_idx)
-                dag.node_set[child_idx].parent.append(parent_idx)
+    for pred_idx in range(node_num):
+        for succ_idx in range(node_num):
+            if dict["adj_matrix"][pred_idx][succ_idx] == 1:
+                dag.node_set[pred_idx].succ.append(succ_idx)
+                dag.node_set[succ_idx].pred.append(pred_idx)
+
+    for node in dag.node_set:
+        if len(node.succ) == 0:
+            node.isLeaf = True
 
     return dag
 
@@ -272,14 +273,14 @@ def generate_backup_dag_dict(dict, backup_ratio):
     for _ in range(node_num):
         adj_matrix.append([0, ] * node_num)
 
-    for parent_idx in range(dict["node_num"]):
-        for child_idx in range(dict["node_num"]):
-            if dict["adj_matrix"][parent_idx][child_idx] == 1:
-                new_p_idx = parent_idx
-                new_c_idx = child_idx
-                if parent_idx in dangling_idx:
+    for pred_idx in range(dict["node_num"]):
+        for succ_idx in range(dict["node_num"]):
+            if dict["adj_matrix"][pred_idx][succ_idx] == 1:
+                new_p_idx = pred_idx
+                new_c_idx = succ_idx
+                if pred_idx in dangling_idx:
                     new_p_idx = dict["node_num"]
-                if child_idx in dangling_idx:
+                if succ_idx in dangling_idx:
                     new_c_idx = dict["node_num"]
                 
                 if new_p_idx != new_c_idx:
