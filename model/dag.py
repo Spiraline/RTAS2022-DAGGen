@@ -17,6 +17,49 @@ def randuniform(arr):
 def randarr(arr):
     return arr[randint(0, len(arr)-1)]
 
+def argmax(value_list, index_list=None):
+    if index_list is None :
+        index_list = list(range(len(value_list)))
+    max_index, max_value = index_list[0], value_list[index_list[0]]
+    for i in index_list :
+        if value_list[i] > max_value :
+            max_index = i
+            max_value = value_list[i]
+    return max_index
+
+def calculate_critical_path(dag):
+    distance = [0,] * len(dag.node_set)
+    indegree = [0,] * len(dag.node_set)
+    task_queue = []
+
+    for i in range(len(dag.node_set)) :
+        if len(dag.node_set[i].pred) == 0 :
+            task_queue.append(dag.node_set[i])
+            distance[i] = dag.node_set[i].exec_t
+
+    for i, v in enumerate(dag.node_set):
+        indegree[i] = len(v.pred)
+
+    while task_queue :
+        vertex = task_queue.pop(0)
+        for v in vertex.succ :
+            distance[v] = max(dag.node_set[v].exec_t + distance[vertex.tid], distance[v]) 
+            indegree[v] -= 1
+            if indegree[v] == 0 :
+                task_queue.append(dag.node_set[v])
+
+    cp = []
+    cv = argmax(distance)
+
+    while True :
+        cp.append(cv)
+        if len(dag.node_set[cv].pred) == 0 :
+            break
+        cv = argmax(distance, dag.node_set[cv].pred)
+    
+    cp.reverse()
+    return cp
+
 def generate_random_dag(**kwargs):
     node_num = randuniform(kwargs.get('node_num', [20, 3]))
     depth = randuniform(kwargs.get('depth', [3.5, 0.5]))

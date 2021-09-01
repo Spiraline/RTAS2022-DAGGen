@@ -26,8 +26,8 @@ class Node(object):
         self.finish_time = -1
 
     def __str__(self):
-        res = "%-9s %-5.1f %40s %40s" \
-            % ('[' + self.name + ']', self.exec_t, self.pred, self.succ)
+        res = "%-9s %-3d %-5.1f %40s %40s" \
+            % ('[' + self.name + ']', self.priority, self.exec_t, self.pred, self.succ)
 
         return res
 
@@ -36,6 +36,7 @@ class Node(object):
 
 class DAG(object):
     def __init__(self, **kwargs):
+        Node.idx = 0
         self.node_set = []
         self.start_node_idx = kwargs.get('start_node_idx', 0)
         self.critical_path = []
@@ -45,7 +46,7 @@ class DAG(object):
         self.dict = {}
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'pred node', 'succ node'))
+        print("%-9s %-3s %-5s %39s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node'))
         for node in self.node_set:
             print(node)
         
@@ -60,13 +61,15 @@ class CPC(object):
         self.F = []
         self.G = []
         self.core_num = kwargs.get('core_num', 4.0)
-        self.alpha = []
-        self.beta = []
         self.res_t = []
 
     def __str__(self):
-        print("%-9s %-5s %39s %40s" % ('name', 'exec_t', 'pred node', 'succ node'))
+        print("%-9s %-3s %-5s %39s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node'))
         for task in self.node_set:
             print(task)
+
+        print('provider : ', self.provider_group)
+        print('F : ', self.F)
+        print('G : ', self.G)
         
         return ''

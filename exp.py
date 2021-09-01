@@ -2,7 +2,7 @@ import argparse
 import math
 from numpy.random import normal
 from model.dag import generate_random_dag, generate_backup_dag_dict, generate_from_dict
-from model.cpc import construct_cpc
+from model.cpc import construct_cpc, assign_priority
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -75,7 +75,10 @@ if __name__ == '__main__':
 
     ### Make CPC model and assign priority
 
-    print(normal_dag)
     normal_cpc = construct_cpc(normal_dag)
+    print(normal_cpc)
+    assign_priority(normal_cpc)
+
+    print(normal_dag)
 
     ### Check feasibility with FP
