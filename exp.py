@@ -76,9 +76,9 @@ if __name__ == '__main__':
     ### Make CPC model and assign priority
 
     normal_cpc = construct_cpc(normal_dag)
-    print(normal_cpc)
+    backup_cpc = construct_cpc(backup_dag)
     assign_priority(normal_cpc)
-
-    print(normal_dag)
+    assign_priority(backup_cpc)
 
     ### Check feasibility with FP
+    

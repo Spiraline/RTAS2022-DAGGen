@@ -142,8 +142,6 @@ def assign_subDAG_priority(node_set, subdag_list):
 
     subCPC = construct_cpc(subDAG)
 
-    print(subCPC)
-
     if len(subCPC.provider_group) == 1:
         for node_idx in subdag_list:
             node_set[node_idx].priority = priority
@@ -151,7 +149,6 @@ def assign_subDAG_priority(node_set, subdag_list):
         priority -= 1
         return
     else:
-        print(subDAG.critical_path)
         for idx in subDAG.critical_path[1:-1]:
             node_set[subdag_list[idx]].priority = priority
         priority -= 1

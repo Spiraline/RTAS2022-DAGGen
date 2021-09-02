@@ -295,8 +295,16 @@ def generate_backup_dag_dict(dict, backup_ratio):
     backup_dict["sl_node_idx"] = dict["sl_node_idx"]
     backup_dict["dangling_idx"] = [dict["sl_node_idx"]]
 
-    backup_dict["critical_path"] = [i for i in dict["critical_path"] if i not in dangling_idx]
-    backup_dict["critical_path"].append(dict["node_num"])
+    # Make new critical path index
+    c_p = []
+    for (idx, node_idx) in enumerate(node_list):
+        if node_idx == dict["sl_node_idx"]:
+            c_p.append(idx)
+            c_p.append(len(node_list)-1)
+        elif node_idx in dict["critical_path"]:
+            c_p.append(idx)
+
+    backup_dict["critical_path"] = c_p
 
     # Calculate backup node execution time
     backup_exec_t = 0

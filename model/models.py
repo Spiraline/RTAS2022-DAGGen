@@ -49,6 +49,10 @@ class DAG(object):
         print("%-9s %-3s %-5s %39s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node'))
         for node in self.node_set:
             print(node)
+
+        print('critical path : ', self.critical_path)
+        print('sl_node : ', self.sl_node_idx)
+        print('dangling : ', self.dangling_idx)
         
         return ''
 
