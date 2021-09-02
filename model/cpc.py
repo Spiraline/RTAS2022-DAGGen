@@ -152,8 +152,8 @@ def assign_subDAG_priority(node_set, subdag_list):
         return
     else:
         print(subDAG.critical_path)
-        for node_idx in subDAG.critical_path[1:-1]:
-            node_set[node_idx].priority = priority
+        for idx in subDAG.critical_path[1:-1]:
+            node_set[subdag_list[idx]].priority = priority
         priority -= 1
         for f_idx in subCPC.F:
             if len(f_idx) > 0:
