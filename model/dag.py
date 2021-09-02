@@ -271,6 +271,24 @@ def generate_from_dict(dict):
 
     return dag
 
+def import_dag_file(file):
+    dag_dict = {}
+    with open(file, 'r', newline='') as f:
+        rd = csv.reader(f)
+
+        dag_dict["node_num"] = int(next(rd)[0])
+        dag_dict["start_node_idx"] = [int(e) for e in next(rd)]
+        dag_dict["sl_node_idx"] = int(next(rd)[0])
+        dag_dict["dangling_idx"] = [int(e) for e in next(rd)]
+        dag_dict["critical_path"] = [int(e) for e in next(rd)]
+        dag_dict["exec_t"] = [int(e) for e in next(rd)]
+        adj = []
+        for line in rd:
+            adj.append([int(e) for e in line])
+        dag_dict["adj_matrix"] = adj
+
+    return dag_dict
+
 def export_dag_file(dag, file_name):
     with open(file_name, 'w', newline='') as f:
         wr = csv.writer(f)
@@ -371,22 +389,9 @@ if __name__ == "__main__":
 
     export_dag_file(dag2, 'hi.csv')
 
-    with open('hi.csv', 'r', newline='') as f:
-        rd = csv.reader(f)
-        dag_dict = {}
+    dict_from_file = import_dag_file('hi, csv')
 
-        dag_dict["node_num"] = int(next(rd)[0])
-        dag_dict["start_node_idx"] = [int(e) for e in next(rd)]
-        dag_dict["sl_node_idx"] = int(next(rd)[0])
-        dag_dict["dangling_idx"] = [int(e) for e in next(rd)]
-        dag_dict["critical_path"] = [int(e) for e in next(rd)]
-        dag_dict["exec_t"] = [int(e) for e in next(rd)]
-        adj = []
-        for line in rd:
-            adj.append([int(e) for e in line])
-        dag_dict["adj_matrix"] = adj
-
-        dag3 = generate_from_dict(dag_dict)
+    dag3 = generate_from_dict(dict_from_file)
 
     print(dag)
     print(dag3)

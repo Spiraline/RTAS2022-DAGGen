@@ -3,7 +3,7 @@ import math
 import os
 import csv
 from numpy.random import normal
-from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict
+from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import sched_fp
 
@@ -75,22 +75,8 @@ if __name__ == '__main__':
 
     ### Make DAG and backup DAG
     if args.file and os.path.exists(args.file):
-        with open(args.file, 'r', newline='') as f:
-            rd = csv.reader(f)
-            dag_dict = {}
-
-            dag_dict["node_num"] = int(next(rd)[0])
-            dag_dict["start_node_idx"] = [int(e) for e in next(rd)]
-            dag_dict["sl_node_idx"] = int(next(rd)[0])
-            dag_dict["dangling_idx"] = [int(e) for e in next(rd)]
-            dag_dict["critical_path"] = [int(e) for e in next(rd)]
-            dag_dict["exec_t"] = [int(e) for e in next(rd)]
-            adj = []
-            for line in rd:
-                adj.append([int(e) for e in line])
-            dag_dict["adj_matrix"] = adj
-
-            normal_dag = generate_from_dict(dag_dict)
+        dag_dict = import_dag_file(args.file)
+        normal_dag = generate_from_dict(dag_dict)
     else:
         normal_dag = generate_random_dag(**dag_param)
         export_dag_file(normal_dag, 'dag.csv')
@@ -113,5 +99,8 @@ if __name__ == '__main__':
     normal_makespan = sched_fp(normal_dag.node_set, core_num)
     backup_makespan = sched_fp(backup_dag.node_set, core_num)
 
+    # TODO : if not feasible, make new DAG
     print(deadline, normal_makespan, backup_makespan)
     
+    ### budget analysis
+
