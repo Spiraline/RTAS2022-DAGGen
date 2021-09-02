@@ -200,7 +200,7 @@ def calculate_I(cpc):
             if isReady:
                 ready_queue.append(cpc.node_set[succ_idx])
 
-def get_inf_path_num(node_set, subdag_list):
+def get_path_num(node_set, subdag_list):
     subDAG = DAG()
     all_path = []
     for node_idx in subdag_list:
@@ -255,7 +255,7 @@ def calculate_finish_time_bound(cpc, core_num):
             max_pred = max([cpc.node_set[node_idx].f_t for node_idx in node.pred])
 
         C_minus_critical = list(set(node.C) - set(cpc.critical_path))
-        inf_path_num = get_inf_path_num(cpc.node_set, C_minus_critical)
+        inf_path_num = get_path_num(cpc.node_set, C_minus_critical)
 
         if node.tid in cpc.critical_path:
             inf = 0
@@ -291,9 +291,85 @@ def calculate_node_I_e(cpc, core_num):
 
         node.I_e = high_p_list + low_p_list
 
-def calculate_inference(cpc, core_num):
+def calculate_beta_and_lambda_v_e(cpc):
+    cpc.beta = []
+    cpc.lambda_v_e = []
+    for (idx, f_group) in enumerate(cpc.F):
+        f_theta = cpc.node_set[cpc.provider_group[idx][-1]].f_t
+        if len(f_group) == 0:
+            cpc.lambda_v_e.append([])
+            cpc.beta.append(0)
+            continue
+        
+        # calculate lambda_v_e
+        v_e_idx = f_group[0]
+        for node_idx in f_group[1:]:
+            if cpc.node_set[node_idx].f_t > cpc.node_set[v_e_idx].f_t:
+                v_e_idx = node_idx
+
+        lambda_v_e = [v_e_idx]
+
+        while len(cpc.node_set[v_e_idx].pred) > 0:
+            v_j_idx = -1
+            for pred_idx in cpc.node_set[v_e_idx].pred:
+                if pred_idx in f_group and cpc.node_set[pred_idx].f_t > f_theta and cpc.node_set[pred_idx].f_t > cpc.node_set[v_j_idx].f_t:
+                    v_j_idx = pred_idx
+
+            if v_j_idx == -1:
+                break
+            else:
+                lambda_v_e.append(v_j_idx)
+                v_e_idx = v_j_idx
+
+        lambda_v_e.reverse()
+        cpc.lambda_v_e.append(lambda_v_e)
+
+        # calculate beta
+        beta = 0
+        for v_idx in lambda_v_e:
+            if cpc.node_set[v_idx].f_t - cpc.node_set[v_idx].exec_t >= f_theta:
+                beta += cpc.node_set[v_idx].exec_t
+            else:
+                beta += cpc.node_set[v_idx].f_t - f_theta
+        
+        cpc.beta.append(beta)
+
+def calculate_R_e(cpc, core_num):
+    cpc.res_t = []
+    for (idx, theta_i) in enumerate(cpc.provider_group):
+        L_i = sum([cpc.node_set[node_idx].exec_t for node_idx in theta_i])
+
+        f_theta = cpc.node_set[theta_i[-1]].f_t
+        I_e_of_lambda_v_e = []
+
+        for node_idx in cpc.lambda_v_e[idx]:
+            node = cpc.node_set[node_idx]
+            high_p_list = [i for i in node.I if cpc.node_set[i].f_t > f_theta and cpc.node_set[i].priority > node.priority]
+            low_p_list = [i for i in node.I if cpc.node_set[i].f_t > f_theta and cpc.node_set[i].priority < node.priority]
+
+            if len(low_p_list) > core_num:
+                low_p_list = low_p_list[:core_num]
+            
+            I_e_of_lambda_v_e = list(set(I_e_of_lambda_v_e) | set(high_p_list) | set(low_p_list))
+
+        inf_path_num = get_path_num(cpc.node_set, I_e_of_lambda_v_e)
+
+        R_e = L_i + cpc.beta[idx]
+
+        if inf_path_num >= core_num:
+            inf_workload = 0
+            for v_idx in I_e_of_lambda_v_e:
+                if cpc.node_set[v_idx].f_t - cpc.node_set[v_idx].exec_t >= f_theta:
+                    inf_workload += cpc.node_set[v_idx].exec_t
+                else:
+                    inf_workload += cpc.node_set[v_idx].f_t - f_theta
+            R_e += math.ceil(inf_workload)
+
+        cpc.res_t.append(R_e)
+
+def calculate_res_t(cpc, core_num):
     calculate_I(cpc)
     calculate_node_I_e(cpc, core_num)
     calculate_finish_time_bound(cpc, core_num)
-
-    print(cpc)
+    calculate_beta_and_lambda_v_e(cpc)
+    calculate_R_e(cpc, core_num)

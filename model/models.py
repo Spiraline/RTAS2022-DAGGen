@@ -60,12 +60,14 @@ class DAG(object):
 class CPC(object):
     def __init__(self, **kwargs):
         self.node_set = []
+        self.core_num = kwargs.get('core_num', 4.0)
         self.critical_path = []
         self.sl_node_idx = []
         self.provider_group = []
         self.F = []
         self.G = []
-        self.core_num = kwargs.get('core_num', 4.0)
+        self.beta = []
+        self.lambda_v_e = []
         self.res_t = []
 
     def __str__(self):
@@ -75,6 +77,8 @@ class CPC(object):
 
         print('provider : ', self.provider_group)
         print('F : ', self.F)
-        print('G : ', self.G)
+        print('beta : ', self.beta)
+        print('res_t : ', self.res_t)
+        print('lambda_v_e : ', self.lambda_v_e)
         
         return ''
