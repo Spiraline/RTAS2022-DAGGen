@@ -31,9 +31,10 @@ def construct_cpc(dag):
             curr_level_node = next_level_node
         node.desc.sort()
 
+    # TODO : Check validity
     for node in cpc.node_set:
         curr_level_node = [node.tid]
-        while len(cpc.node_set[curr_level_node[0]].pred) > 0:
+        while len(curr_level_node) > 0 and len(cpc.node_set[curr_level_node[0]].pred) > 0:
             prev_level_node = []
             for node_idx in curr_level_node:
                 for parent in cpc.node_set[node_idx].pred:
