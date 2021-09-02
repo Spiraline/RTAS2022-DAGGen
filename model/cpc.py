@@ -17,34 +17,23 @@ def construct_cpc(dag):
 
     ### 0. anc, desc group
     for node in cpc.node_set:
-        curr_level_node = [node.tid]
-        while len(cpc.node_set[curr_level_node[0]].succ) > 0:
-            next_level_node = []
-            for node_idx in curr_level_node:
-                for child in cpc.node_set[node_idx].succ:
-                    if child not in next_level_node:
-                        next_level_node.append(child)
-            
-            for node_idx in next_level_node:
-                if node_idx not in node.desc:
-                    node.desc.append(node_idx)
-            curr_level_node = next_level_node
+        desc_candidate = node.succ
+        while len(desc_candidate) > 0:
+            node_idx = desc_candidate.pop()
+            node.desc.append(node_idx)
+            for child in cpc.node_set[node_idx].succ:
+                if child not in node.desc and child not in desc_candidate:
+                    desc_candidate.append(child)
         node.desc.sort()
 
-    # TODO : Check validity
     for node in cpc.node_set:
-        curr_level_node = [node.tid]
-        while len(curr_level_node) > 0 and len(cpc.node_set[curr_level_node[0]].pred) > 0:
-            prev_level_node = []
-            for node_idx in curr_level_node:
-                for parent in cpc.node_set[node_idx].pred:
-                    if parent not in next_level_node:
-                        prev_level_node.append(parent)
-            
-            for node_idx in prev_level_node:
-                if node_idx not in node.anc:
-                    node.anc.append(node_idx)
-            curr_level_node = prev_level_node
+        anc_candidate = node.pred
+        while len(anc_candidate) > 0:
+            node_idx = anc_candidate.pop()
+            node.anc.append(node_idx)
+            for parent in cpc.node_set[node_idx].pred:
+                if parent not in node.anc and parent not in anc_candidate:
+                    anc_candidate.append(parent)
         node.anc.sort()
 
     # Make concurrent_group
