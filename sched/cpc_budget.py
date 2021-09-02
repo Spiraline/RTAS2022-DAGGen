@@ -29,6 +29,7 @@ def cpc_budget(cpc, deadline, core_num, sl_unit):
         return 0
 
     # binary search for optimal L
+    # L_low = floor(e_s_init / sl_unit)
     L_low = floor(e_s_init / sl_unit)
     L_high = floor(e_s_max / sl_unit)
     while L_low < L_high:

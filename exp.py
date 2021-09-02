@@ -1,48 +1,52 @@
-import argparse
 import math
-import os
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import check_acceptance, check_deadline_miss
 from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='argparse for test')
-    parser.add_argument('--dag_num', type=int, help='Test DAG number', default=100)
-    parser.add_argument('--iter_size', type=int, help='#iterative per 1 DAG', default=100)
+def debug(file, **kwargs):
+    core_num = kwargs.get('core_num', 4)
+    backup_ratio = kwargs.get('backup_ratio', 0.5)
+    sl_unit = kwargs.get('sl_unit', 5.0)
+    sl_exp = kwargs.get('sl_exp', 30)
+    sl_std = kwargs.get('sl_std', 1.0)
+    A_acc = kwargs.get('A_acc', 0.95)
+    base_loop_count = kwargs.get('base', [100, 200])
+    density = kwargs.get('density', 0.3)
 
-    parser.add_argument('--core_num', type=int, help='#cpu', default=4)
-    parser.add_argument('--node_num', type=int, help='#node number in DAG', default=40)
-    parser.add_argument('--dag_depth', type=float, help='depth of DAG', default=6.5)
-    parser.add_argument('--backup', type=float, help='Backup node execution time rate', default=0.8)
-    parser.add_argument('--sl_unit', type=float, help='SL node execution unit time', default=2.0)
+    dag_dict = import_dag_file(file)
+    normal_dag = generate_from_dict(dag_dict)
+    backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, backup_ratio)
+    backup_dag = generate_from_dict(backup_dag_dict)
+    pass
 
-    parser.add_argument('--node_avg', type=int, help='WCET average of nodes', default=40)
-    parser.add_argument('--node_std', type=int, help='WCET std of nodes', default=10)
-
-    parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=30)
-    parser.add_argument('--sl_std', type=float, help='variance for score function', default=0.05)
-    parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.85)
-
-    parser.add_argument('--base', type=str, help='list for value of base [small, large]', default='100,200')
-    parser.add_argument('--density', type=float, help='(avg execution time * node #) / (deadline * cpu #)', default=0.3)
-    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.2)    
-
-    parser.add_argument('--file', type=str, help='DAG csv file')
-
-    args = parser.parse_args()
-
-    base_loop_count = [int(b) for b in args.base.split(",")]
+def syn_exp(**kwargs):
+    dag_num = kwargs.get('dag_num', 100)
+    instance_num = kwargs.get('instance_num', 100)
+    core_num = kwargs.get('core_num', 4)
+    node_num = kwargs.get('node_num', 40)
+    depth = kwargs.get('depth', 6.5)
+    backup_ratio = kwargs.get('backup_ratio', 0.5)
+    sl_unit = kwargs.get('sl_unit', 5.0)
+    exec_avg = kwargs.get('exec_avg', 40)
+    exec_std = kwargs.get('exec_std', 10)
+    sl_exp = kwargs.get('sl_exp', 30)
+    sl_std = kwargs.get('sl_std', 1.0)
+    A_acc = kwargs.get('A_acc', 0.95)
+    base_loop_count = kwargs.get('base', [100, 200])
+    density = kwargs.get('density', 0.3)
+    extra_arc_ratio = kwargs.get('extra_arc_ratio', 0.1)
+    dangling_ratio = kwargs.get('dangling_ratio', 0.2)
 
     dag_param = {
-        "node_num": [args.node_num, 0],
-        "depth": [args.dag_depth, 1.5],
-        "exec_t": [args.node_avg, args.node_std],
+        "node_num": [node_num, 0],
+        "depth": [depth, 1.5],
+        "exec_t": [exec_avg, exec_std],
         "start_node": [1, 0],
         "end_node": [1, 0],
-        "extra_arc_ratio" : 0.1,
-        "dangling_node_ratio" : args.dangling
+        "extra_arc_ratio" : extra_arc_ratio,
+        "dangling_node_ratio" : dangling_ratio
     }
 
     total_unaccept = [0, ] * (len(base_loop_count) + 2)
@@ -50,16 +54,12 @@ if __name__ == '__main__':
     total_both = [0, ] * (len(base_loop_count) + 2)
 
     dag_idx = 0
-    while dag_idx < args.dag_num:
+    while dag_idx < dag_num:
         ### Make DAG and backup DAG
-        if args.file and os.path.exists(args.file):
-            dag_dict = import_dag_file(args.file)
-            normal_dag = generate_from_dict(dag_dict)
-        else:
-            normal_dag = generate_random_dag(**dag_param)
-            export_dag_file(normal_dag, 'dag.csv')
+        normal_dag = generate_random_dag(**dag_param)
+        export_dag_file(normal_dag, 'dag.csv')
 
-        backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, args.backup)
+        backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, backup_ratio)
         backup_dag = generate_from_dict(backup_dag_dict)
 
         ### Make CPC model and assign priority
@@ -69,22 +69,22 @@ if __name__ == '__main__':
         assign_priority(backup_cpc)
 
         ### Budget analysis
-        deadline = int((args.node_avg * args.node_num) / (args.core_num * args.density))
-        normal_dag.node_set[normal_dag.sl_node_idx].exec_t = args.sl_unit
-        backup_dag.node_set[backup_dag.sl_node_idx].exec_t = args.sl_unit
+        deadline = int((exec_avg * node_num) / (core_num * density))
+        normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
+        backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
-        normal_classic_budget = classic_budget(normal_cpc, deadline, args.core_num)
-        backup_classic_budget = classic_budget(backup_cpc, deadline, args.core_num)
-        normal_cpc_budget = cpc_budget(normal_cpc, deadline, args.core_num, args.sl_unit)
-        backup_cpc_budget = cpc_budget(backup_cpc, deadline, args.core_num, args.sl_unit)
+        normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+        backup_classic_budget = classic_budget(backup_cpc, deadline, core_num)
+        normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
+        backup_cpc_budget = cpc_budget(backup_cpc, deadline, core_num, sl_unit)
+
+        classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / sl_unit)
+        cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / sl_unit)
 
         # If budget is less than 0, DAG is infeasible
-        if normal_classic_budget <= 0 or normal_cpc_budget <= 0 or backup_classic_budget <= 0 or backup_cpc_budget <= 0:
+        if classic_loop_count <= 0 or cpc_loop_count <= 0:
             # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
             continue
-
-        classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / args.sl_unit)
-        cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / args.sl_unit)
 
         loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
 
@@ -92,9 +92,9 @@ if __name__ == '__main__':
             unac_one_dag = 0
             miss_one_dag = 0
             both_one_dag = 0
-            for _ in range(args.iter_size):
-                isUnacceptable, lc = check_acceptance(max_lc, args.sl_exp, args.sl_std, args.acceptance)
-                isMiss = check_deadline_miss(normal_dag, args.core_num, lc, args.sl_unit, deadline) or check_deadline_miss(backup_dag, args.core_num, lc, args.sl_unit, deadline)
+            for _ in range(instance_num):
+                isUnacceptable, lc = check_acceptance(max_lc, sl_exp, sl_std, A_acc)
+                isMiss = check_deadline_miss(normal_dag, core_num, lc, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, lc, sl_unit, deadline)
 
                 if isUnacceptable and isMiss:
                     both_one_dag += 1
@@ -103,18 +103,16 @@ if __name__ == '__main__':
                 elif not isUnacceptable and isMiss:
                     miss_one_dag += 1
 
-            total_unaccept[lc_idx] += unac_one_dag / args.iter_size
-            total_deadline_miss[lc_idx] += miss_one_dag / args.iter_size
-            total_both[lc_idx] += both_one_dag / args.iter_size
+            total_unaccept[lc_idx] += unac_one_dag / instance_num
+            total_deadline_miss[lc_idx] += miss_one_dag / instance_num
+            total_both[lc_idx] += both_one_dag / instance_num
 
         print('[' + str(dag_idx) + ']', loop_count_list)
         dag_idx += 1
     
     for lc_idx in range(len(loop_count_list)):
-        total_unaccept[lc_idx] /= args.dag_num
-        total_deadline_miss[lc_idx] /= args.dag_num
-        total_both[lc_idx] /= args.dag_num
+        total_unaccept[lc_idx] /= dag_num
+        total_deadline_miss[lc_idx] /= dag_num
+        total_both[lc_idx] /= dag_num
 
-    print(total_unaccept)
-    print(total_deadline_miss)
-    print(total_both)
+    return total_unaccept, total_deadline_miss, total_both
