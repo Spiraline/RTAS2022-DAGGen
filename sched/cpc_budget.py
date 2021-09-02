@@ -1,38 +1,46 @@
-### Calculate I and I_e group
-def calculate_inference_group(cpc):
-    ready_queue = []
-    is_complete = [False, ] * len(cpc.node_set)
+from math import floor
+from sys import path
 
-    for node in cpc.node_set:
-        if len(node.pred) == 0:
-            ready_queue.append(node)
+path.insert(0, '..')
 
-    # Calculate inference group
-    non_critical_node = [i for i in range(len(cpc.node_set)) if i not in cpc.critical_path]
+from model.cpc import calculate_cpc_res_t
 
-    while False in is_complete:
-        node = ready_queue.pop()
+def get_e_s_max(cpc, deadline):
+    return deadline - sum([cpc.node_set[i].exec_t for i in cpc.critical_path if i != cpc.sl_node_idx])
 
-        I_list = list(set(node.C) & set(non_critical_node))
-        for anc_idx in node.anc:
-            I_list = list(set(I_list) - set(cpc.node_set[anc_idx].I))
+def cpc_budget(cpc, deadline, core_num, sl_unit):
+    # calculate e_s_max
+    e_s_max = deadline - sum([cpc.node_set[i].exec_t for i in cpc.critical_path if i != cpc.sl_node_idx])
 
-        node.I = I_list
+    # calculate e_s_init
+    cpc.node_set[cpc.sl_node_idx].exec_t = e_s_max
+    calculate_cpc_res_t(cpc, core_num)
+
+    for (idx, theta) in enumerate(cpc.provider_group):
+        if cpc.sl_node_idx in theta:
+            theta_idx_with_sl = idx
+            break
+
+    e_s_init = deadline - sum([cpc.res_t[i] for i in range(len(cpc.provider_group)) if i != theta_idx_with_sl])
+    e_s_init -= sum([cpc.node_set[i].exec_t for i in cpc.provider_group[theta_idx_with_sl] if i != cpc.sl_node_idx])
+    e_s_init -= sum([cpc.node_set[i].exec_t for i in cpc.F[theta_idx_with_sl]]) / core_num
+
+    if e_s_init <= 0:
+        return 0
+
+    # binary search for optimal L
+    L_low = floor(e_s_init / sl_unit)
+    L_high = floor(e_s_max / sl_unit)
+    while L_low < L_high:
+        L_mid = floor((L_high + L_low + 1) / 2)
+        e_s = int(L_mid * sl_unit)
+        cpc.node_set[cpc.sl_node_idx].exec_t = e_s
+        calculate_cpc_res_t(cpc, core_num)
+
+        if sum(cpc.res_t) > deadline:
+            L_high = L_mid - 1
+        else:
+            L_low = L_mid
+    
+    return int(L_low * sl_unit)
         
-        is_complete[node.tid] = True
-        succ_node_list = node.succ
-
-        for succ_idx in succ_node_list:
-            isReady = True
-            for pred_idx in cpc.node_set[succ_idx].pred:
-                if not is_complete[pred_idx]:
-                    isReady = False
-        
-            if isReady:
-                ready_queue.append(cpc.node_set[succ_idx])
-
-def cpc_response_time(cpc, core_num):
-    calculate_inference_group(cpc)
-
-def cpc_budget(cpc, deadline, core_num):
-    cpc_response_time(cpc, core_num)

@@ -1,12 +1,12 @@
 import argparse
 import math
 import os
-import csv
 from numpy.random import normal
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
-from model.cpc import calculate_res_t, construct_cpc, assign_priority
+from model.cpc import construct_cpc, assign_priority
 from sched.fp import sched_fp
 from sched.classic_budget import classic_budget
+from sched.cpc_budget import cpc_budget
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -105,8 +105,6 @@ if __name__ == '__main__':
     ### budget analysis
     normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
 
-    calculate_res_t(normal_cpc, core_num)
+    normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
 
-    print(normal_cpc)
-    
-    # normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num)
+    print(normal_classic_budget, normal_cpc_budget)

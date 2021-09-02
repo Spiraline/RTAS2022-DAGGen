@@ -363,11 +363,11 @@ def calculate_R_e(cpc, core_num):
                     inf_workload += cpc.node_set[v_idx].exec_t
                 else:
                     inf_workload += cpc.node_set[v_idx].f_t - f_theta
-            R_e += math.ceil(inf_workload)
+            R_e += math.ceil(inf_workload / core_num)
 
         cpc.res_t.append(R_e)
 
-def calculate_res_t(cpc, core_num):
+def calculate_cpc_res_t(cpc, core_num):
     calculate_I(cpc)
     calculate_node_I_e(cpc, core_num)
     calculate_finish_time_bound(cpc, core_num)
