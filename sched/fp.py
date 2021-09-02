@@ -1,6 +1,8 @@
+from numpy.random import normal
+import math
+
 ### return value : makespan
 def sched_fp(node_set, core_num):
-    
     ready_queue = []
     # time_table = [[], ] * core_num
     time_table = []
@@ -68,3 +70,33 @@ def sched_fp(node_set, core_num):
                 makespan = last_f_t_in_core
 
     return makespan
+
+def get_noise(std):
+    return normal(0, std, 1)
+
+def count2score(x, sl_exp, std):
+    delta = get_noise(std)
+    return max(1 - pow(math.e, -x/sl_exp) - math.fabs(delta), 0)
+
+def score2count(score, sl_exp) :
+    return math.floor((-1) * sl_exp * math.log(-score+1))
+
+# return value : (unacceptable flag, loop count)
+def check_acceptance(max_lc, sl_exp, std, acceptable):
+    minimum_lc = score2count(acceptable, sl_exp)
+
+    if max_lc < minimum_lc:
+        return True, max_lc
+
+    for lc in range(minimum_lc, max_lc+1):
+        if count2score(lc, sl_exp, std) > acceptable:
+            return False, lc
+    
+    return True, max_lc
+
+def check_deadline_miss(dag, core_num, lc, sl_unit, deadline):
+    dag.node_set[dag.sl_node_idx].exec_t = lc * sl_unit
+    makespan = sched_fp(dag.node_set, core_num)
+
+    return makespan > deadline
+    

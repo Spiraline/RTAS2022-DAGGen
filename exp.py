@@ -1,10 +1,9 @@
 import argparse
 import math
 import os
-from numpy.random import normal
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
-from sched.fp import sched_fp
+from sched.fp import check_acceptance, check_deadline_miss
 from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
 
@@ -22,14 +21,13 @@ if __name__ == '__main__':
     parser.add_argument('--node_avg', type=int, help='WCET average of nodes', default=40)
     parser.add_argument('--node_std', type=int, help='WCET std of nodes', default=10)
 
-    parser.add_argument('--function', type=str, help='function type for score', default='e')
-    parser.add_argument('--function_std', type=float, help='variance for score function', default=0.05)
+    parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=30)
+    parser.add_argument('--sl_std', type=float, help='variance for score function', default=0.05)
     parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.85)
 
     parser.add_argument('--base', type=str, help='list for value of base [small, large]', default='100,200')
     parser.add_argument('--density', type=float, help='(avg execution time * node #) / (deadline * cpu #)', default=0.3)
-    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.2)
-    parser.add_argument('--SL_exp', type=int, help='exponential of SL node', default=30)
+    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.2)    
 
     parser.add_argument('--file', type=str, help='DAG csv file')
 
@@ -37,32 +35,8 @@ if __name__ == '__main__':
 
     ### experiments argument
     dag_num = args.dag_num
-    iter_size = args.iter_size
-    core_num = args.core_num
-    density = args.density
-    sl_unit = args.sl_unit
-    func_std = args.function_std
 
-    def get_noise():
-        return normal(0, func_std, 1)
-
-    if args.function == 'log':
-        def count2score(x) :
-            return math.log(x+1) * get_noise()
-    elif args.function == 'e':
-        def count2score(x, std=True):
-            delta = get_noise()
-            if std :
-                return max(1 - pow(math.e, -x/args.SL_exp) - math.fabs(delta), 0)
-            else :
-                return 1 - pow(math.e, -x/args.SL_exp)
-
-        def score2count(score) :
-            return (-args.SL_exp) * math.log(-score+1)
-    else :
-        raise NotImplementedError
-
-    base_small, base_large = [int(b) for b in args.base.split(",")]
+    base_loop_count = [int(b) for b in args.base.split(",")]
 
     dag_param = {
         "node_num": [args.node_num, 0],
@@ -91,20 +65,40 @@ if __name__ == '__main__':
     assign_priority(normal_cpc)
     assign_priority(backup_cpc)
 
-    ### Check feasibility with FP when loop count is 1
-    deadline = int((args.node_avg * args.node_num) / (core_num * density))
-    normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
-    backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
+    ### Budget analysis
+    deadline = int((args.node_avg * args.node_num) / (args.core_num * args.density))
+    normal_dag.node_set[normal_dag.sl_node_idx].exec_t = args.sl_unit
+    backup_dag.node_set[backup_dag.sl_node_idx].exec_t = args.sl_unit
 
-    normal_makespan = sched_fp(normal_dag.node_set, core_num)
-    backup_makespan = sched_fp(backup_dag.node_set, core_num)
+    normal_classic_budget = classic_budget(normal_cpc, deadline, args.core_num)
+    backup_classic_budget = classic_budget(backup_cpc, deadline, args.core_num)
+    normal_cpc_budget = cpc_budget(normal_cpc, deadline, args.core_num, args.sl_unit)
+    backup_cpc_budget = cpc_budget(backup_cpc, deadline, args.core_num, args.sl_unit)
 
-    # TODO : if not feasible, make new DAG
-    print(deadline, normal_makespan, backup_makespan)
-    
-    ### budget analysis
-    normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+    # If budget is less than 0, DAG is infeasible
+    if normal_classic_budget <= 0 or normal_cpc_budget <= 0 or backup_classic_budget <= 0 or backup_cpc_budget <= 0:
+        print('infeasible DAG')
 
-    normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
+    classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / args.sl_unit)
+    cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / args.sl_unit)
 
-    print(normal_classic_budget, normal_cpc_budget)
+    loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
+
+    for max_lc in loop_count_list:
+        unac_one_dag = 0
+        miss_one_dag = 0
+        both = 0
+        for _ in range(args.iter_size):
+            isUnacceptable, lc = check_acceptance(max_lc, args.sl_exp, args.sl_std, args.acceptance)
+            isMiss = check_deadline_miss(normal_dag, args.core_num, lc, args.sl_unit, deadline) or check_deadline_miss(backup_dag, args.core_num, lc, args.sl_unit, deadline)
+
+            if isUnacceptable and isMiss:
+                both += 1
+            elif isUnacceptable and not isMiss:
+                unac_one_dag += 1
+            elif not isUnacceptable and isMiss:
+                miss_one_dag += 1
+        
+        unac_one_dag /= args.iter_size
+        miss_one_dag /= args.iter_size
+        
