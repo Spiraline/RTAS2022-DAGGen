@@ -304,8 +304,6 @@ def generate_backup_dag_dict(dict, backup_ratio):
     backup_dict = {}
 
     dangling_idx = dict["dangling_idx"]
-    sl_node_idx = dict["sl_node_idx"]
-    dangling_idx.remove(sl_node_idx)
 
     # last node is backup_node
     node_list = [i for i in range(dict["node_num"]+1) if i not in dangling_idx]

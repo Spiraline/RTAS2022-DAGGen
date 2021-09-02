@@ -90,11 +90,12 @@ def syn_exp(**kwargs):
             total_deadline_miss[lc_idx] += miss_one_dag / instance_num
             total_both[lc_idx] += both_one_dag / instance_num
 
+            if lc_idx == len(loop_count_list) - 1:
+                if both_one_dag > 0 or miss_one_dag > 0:
+                    export_dag_file(normal_dag, 'dag.csv')
+
         print('[' + str(dag_idx) + ']', loop_count_list)
         dag_idx += 1
-
-        if both_one_dag > 0 or miss_one_dag > 0:
-            export_dag_file(normal_dag, 'dag.csv')
     
     for lc_idx in range(len(loop_count_list)):
         total_unaccept[lc_idx] /= dag_num
@@ -147,8 +148,8 @@ def debug(file, **kwargs):
         isMiss = check_deadline_miss(normal_dag, core_num, lc, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, lc, sl_unit, deadline)
 
         if isUnacceptable and isMiss:
-            print(lc_idx, 'both')
+            print(lc_idx, lc, 'both')
         elif isUnacceptable and not isMiss:
-            print(lc_idx, 'unacceptable')
+            print(lc_idx, lc, 'unacceptable')
         elif not isUnacceptable and isMiss:
-            print(lc_idx, 'deadline miss')
+            print(lc_idx, lc, 'deadline miss')
