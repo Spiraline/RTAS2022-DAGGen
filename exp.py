@@ -7,6 +7,7 @@ from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import sched_fp
 from sched.classic_budget import classic_budget
+from sched.cpc_budget import cpc_budget
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -86,7 +87,6 @@ if __name__ == '__main__':
     backup_dag = generate_from_dict(backup_dag_dict)
 
     ### Make CPC model and assign priority
-
     normal_cpc = construct_cpc(normal_dag)
     backup_cpc = construct_cpc(backup_dag)
     assign_priority(normal_cpc)
@@ -104,5 +104,6 @@ if __name__ == '__main__':
     print(deadline, normal_makespan, backup_makespan)
     
     ### budget analysis
-    normal_classic = classic_budget(normal_cpc, deadline, core_num)
-    print(normal_classic)
+    normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+    
+    normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num)

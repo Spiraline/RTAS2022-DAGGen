@@ -17,7 +17,7 @@ def construct_cpc(dag):
 
     ### 0. anc, desc group
     for node in cpc.node_set:
-        desc_candidate = node.succ
+        desc_candidate = node.succ.copy()
         while len(desc_candidate) > 0:
             node_idx = desc_candidate.pop()
             node.desc.append(node_idx)
@@ -27,7 +27,7 @@ def construct_cpc(dag):
         node.desc.sort()
 
     for node in cpc.node_set:
-        anc_candidate = node.pred
+        anc_candidate = node.pred.copy()
         while len(anc_candidate) > 0:
             node_idx = anc_candidate.pop()
             node.anc.append(node_idx)

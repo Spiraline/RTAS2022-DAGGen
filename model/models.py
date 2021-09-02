@@ -13,21 +13,22 @@ class Node(object):
         self.level = 0
 
         # Assigned after CPCGen
-        self.priority = 0
-        self.anc = []                                           # A list of v_j's ancestor nodes
-        self.desc = []                                          # A list of v_j's descendent nodes
-        self.C = []                                             # A list of nodes that can concurrently executes
-        self.non_critical_group = []                            # Intersection of non critical nodes and concurrent nodes
-        self.interference_group = []                            # A list of interfering nodes
-        self.interference_group_priority = []                   # A list of interfering nodes considering priority
+        self.priority = -1                          # v_j's priority
+        self.anc = []                               # A list of v_j's ancestor nodes
+        self.desc = []                              # A list of v_j's descendent nodes
+        self.C = []                                 # A list of nodes that can concurrently executes
+        
+        # Assigned after CPC budget analysis
+        self.I = []                                 # A list of interfering nodes
+        self.I_e = []                               # A list of interfering nodes considering priority
+        self.finish_time_bound = -1
 
-        self.priority = -1                                      # v_j's priority
-        self.actual_delay = 0                                   # v_j's actual delay from interference group considering priority
-        self.finish_time = -1
+        self.actual_delay = 0                       # v_j's actual delay from interference group considering priority
 
     def __str__(self):
-        res = "%-9s %-3d %-5.1f %40s %40s" \
-            % ('[' + self.name + ']', self.priority, self.exec_t, self.pred, self.succ)
+        res = "%-9s %-3d %-4d %40s %40s %4d %40s %40s" \
+            % ('[' + self.name + ']', self.priority, self.exec_t, self.pred, self.succ,
+                self.finish_time_bound, self.I, self.I_e)
 
         return res
 
@@ -46,7 +47,7 @@ class DAG(object):
         self.dict = {}
 
     def __str__(self):
-        print("%-9s %-3s %-5s %39s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node'))
+        print("%-9s %-3s %-5s %38s %40s %4s %40s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node', 'f_t', 'I', 'I_e'))
         for node in self.node_set:
             print(node)
 
@@ -68,7 +69,7 @@ class CPC(object):
         self.res_t = []
 
     def __str__(self):
-        print("%-9s %-3s %-5s %39s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node'))
+        print("%-9s %-3s %-5s %38s %40s %4s %40s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node', 'f_t', 'I', 'I_e'))
         for task in self.node_set:
             print(task)
 
