@@ -3,13 +3,14 @@ import math
 from numpy.random import normal
 from model.dag import generate_random_dag, generate_backup_dag_dict, generate_from_dict
 from model.cpc import construct_cpc, assign_priority
+from sched.fp import sched_fp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
     parser.add_argument('--dag_num', type=int, help='Test DAG number', default=100)
     parser.add_argument('--iter_size', type=int, help='#iterative per 1 DAG', default=100)
 
-    parser.add_argument('--cpu_num', type=int, help='#cpu', default=4)
+    parser.add_argument('--core_num', type=int, help='#cpu', default=4)
     parser.add_argument('--node_num', type=int, help='#node number in DAG', default=40)
     parser.add_argument('--dag_depth', type=float, help='depth of DAG', default=6.5)
     parser.add_argument('--backup', type=float, help='Backup node execution time rate', default=0.8)
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     ### experiments argument
     dag_num = args.dag_num
     iter_size = args.iter_size
-    cpu_num = args.cpu_num
+    core_num = args.core_num
     density = args.density
     sl_unit = args.sl_unit
     func_std = args.function_std
@@ -81,4 +82,6 @@ if __name__ == '__main__':
     assign_priority(backup_cpc)
 
     ### Check feasibility with FP
+    normal_makespan = sched_fp(normal_dag.node_set, core_num)
+    backup_makespan = sched_fp(backup_dag.node_set, core_num)
     

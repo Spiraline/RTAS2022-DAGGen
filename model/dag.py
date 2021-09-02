@@ -182,7 +182,8 @@ def generate_random_dag(**kwargs):
                 dag.node_set[node_idx].succ.append(succ_idx)
                 dag.node_set[succ_idx].pred.append(node_idx)
 
-    # make extra arc
+    # make extra arc (disabled since unnecessary)
+    '''
     for i in range(extra_arc_num):
         arc_added_flag = False
         failCnt = 0
@@ -200,6 +201,7 @@ def generate_random_dag(**kwargs):
                 arc_added_flag = True
             else:
                 failCnt += 1
+    '''
 
     ### 5. Make critical path's length longest
     exec_t_arr = [randuniform(_exec_t) for _ in range(node_num)]
