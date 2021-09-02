@@ -6,6 +6,7 @@ from numpy.random import normal
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
 from sched.fp import sched_fp
+from sched.classic_budget import classic_budget
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -103,4 +104,5 @@ if __name__ == '__main__':
     print(deadline, normal_makespan, backup_makespan)
     
     ### budget analysis
-
+    normal_classic = classic_budget(normal_cpc, deadline, core_num)
+    print(normal_classic)

@@ -1,6 +1,3 @@
-def avg(L):
-    return sum(L) / len(L)
-
 ### return value : makespan
 def sched_fp(node_set, core_num):
     
