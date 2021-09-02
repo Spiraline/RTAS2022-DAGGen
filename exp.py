@@ -4,10 +4,9 @@ import os
 import csv
 from numpy.random import normal
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
-from model.cpc import construct_cpc, assign_priority
+from model.cpc import construct_cpc, assign_priority, calculate_inference
 from sched.fp import sched_fp
 from sched.classic_budget import classic_budget
-from sched.cpc_budget import cpc_budget
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for test')
@@ -105,5 +104,7 @@ if __name__ == '__main__':
     
     ### budget analysis
     normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+
+    calculate_inference(normal_cpc, core_num)
     
-    normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num)
+    # normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num)

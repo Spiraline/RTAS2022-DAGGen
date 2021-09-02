@@ -167,4 +167,118 @@ def assign_priority(cpc):
             f = f_.copy()
             assign_subDAG_priority(cpc.node_set, f)
     
+### Calculate I group
+def calculate_I(cpc):
+    ready_queue = []
+    is_complete = [False, ] * len(cpc.node_set)
 
+    for node in cpc.node_set:
+        if len(node.pred) == 0:
+            ready_queue.append(node)
+
+    # Calculate inference group
+    non_critical_node = [i for i in range(len(cpc.node_set)) if i not in cpc.critical_path]
+
+    while False in is_complete:
+        node = ready_queue.pop()
+
+        I_list = list(set(node.C) & set(non_critical_node))
+        for anc_idx in node.anc:
+            I_list = list(set(I_list) - set(cpc.node_set[anc_idx].I))
+
+        node.I = I_list
+        
+        is_complete[node.tid] = True
+        succ_node_list = node.succ
+
+        for succ_idx in succ_node_list:
+            isReady = True
+            for pred_idx in cpc.node_set[succ_idx].pred:
+                if not is_complete[pred_idx]:
+                    isReady = False
+        
+            if isReady:
+                ready_queue.append(cpc.node_set[succ_idx])
+
+def get_inf_path_num(node_set, subdag_list):
+    subDAG = DAG()
+    all_path = []
+    for node_idx in subdag_list:
+        node_param = {
+            "name" : "node" + str(node_idx),
+            "exec_t" : node_set[node_idx].exec_t
+        }
+        new_node = Node(**node_param)
+        subDAG.node_set.append(new_node)
+
+        for succ_idx in node_set[node_idx].succ:
+            if succ_idx in subdag_list:
+                new_succ_idx = subdag_list.index(succ_idx)
+                new_node.succ.append(new_succ_idx)
+        
+        for pred_idx in node_set[node_idx].pred:
+            if pred_idx in subdag_list:
+                new_pred_idx = subdag_list.index(pred_idx)
+                new_node.pred.append(new_pred_idx)
+
+    tmp_path = []
+
+    for node in subDAG.node_set:
+        if len(node.pred) == 0:
+            tmp_path.append([node.tid])
+
+    while len(tmp_path) > 0:
+        path = tmp_path.pop()
+
+        if len(subDAG.node_set[path[-1]].succ) == 0:
+            all_path.append(path)
+        else:
+            for succ_idx in subDAG.node_set[path[-1]].succ:
+                tmp_path.append(path + [succ_idx])
+
+    return len(all_path)
+
+def calculate_finish_time_bound(cpc, core_num):
+    ready_queue = []
+    is_complete = [False, ] * len(cpc.node_set)
+
+    for node in cpc.node_set:
+        if len(node.pred) == 0:
+            ready_queue.append(node)
+    
+    while False in is_complete:
+        node = ready_queue.pop()
+
+        if len(node.pred) == 0:
+            max_pred = 0
+        else:
+            max_pred = max([cpc.node_set[node_idx].f_t for node_idx in node.pred])
+
+        C_minus_critical = list(set(node.C) - set(cpc.critical_path))
+        inf_path_num = get_inf_path_num(cpc.node_set, C_minus_critical)
+
+        if node.tid in cpc.critical_path:
+            inf = 0
+        elif inf_path_num < core_num - 1:
+            inf = 0
+        else:
+            inf = math.ceil(sum([cpc.node_set[node_idx].exec_t for node_idx in node.I]) / (core_num - 1))
+
+        node.f_t = node.exec_t + max_pred + inf
+        
+        # Handle complete node
+        is_complete[node.tid] = True
+        succ_node_list = node.succ
+
+        for succ_idx in succ_node_list:
+            isReady = True
+            for pred_idx in cpc.node_set[succ_idx].pred:
+                if not is_complete[pred_idx]:
+                    isReady = False
+        
+            if isReady:
+                ready_queue.append(cpc.node_set[succ_idx])
+
+def calculate_inference(cpc, core_num):
+    calculate_I(cpc)
+    calculate_finish_time_bound(cpc, core_num)

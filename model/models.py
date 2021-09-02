@@ -21,14 +21,14 @@ class Node(object):
         # Assigned after CPC budget analysis
         self.I = []                                 # A list of interfering nodes
         self.I_e = []                               # A list of interfering nodes considering priority
-        self.finish_time_bound = -1
+        self.f_t = -1
 
         self.actual_delay = 0                       # v_j's actual delay from interference group considering priority
 
     def __str__(self):
         res = "%-9s %-3d %-4d %40s %40s %4d %40s %40s" \
             % ('[' + self.name + ']', self.priority, self.exec_t, self.pred, self.succ,
-                self.finish_time_bound, self.I, self.I_e)
+                self.f_t, self.I, self.I_e)
 
         return res
 

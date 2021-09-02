@@ -31,9 +31,6 @@ def calculate_inference_group(cpc):
             if isReady:
                 ready_queue.append(cpc.node_set[succ_idx])
 
-    # Calculate I_e
-    for node in cpc.node_set:
-
 def cpc_response_time(cpc, core_num):
     calculate_inference_group(cpc)
 

@@ -306,8 +306,25 @@ def generate_backup_dag_dict(dict, backup_ratio):
     dangling_idx = dict["dangling_idx"]
     sl_node_idx = dict["sl_node_idx"]
     dangling_idx.remove(sl_node_idx)
-    node_list = [i for i in range(dict["node_num"]+1) if i not in dangling_idx]
+
     # last node is backup_node
+    node_list = [i for i in range(dict["node_num"]+1) if i not in dangling_idx]
+
+    # remove cycle node (dangling -> A -> dangling)
+    has_cycle = []
+    for node_idx in node_list[:-1]:
+        exist_outcoming = exist_incoming = False
+        for dang_idx in dangling_idx:
+            if dict["adj_matrix"][node_idx][dang_idx] == 1:
+                exist_outcoming = True
+            if dict["adj_matrix"][dang_idx][node_idx] == 1:
+                exist_incoming = True
+        
+        if exist_incoming and exist_outcoming:
+            has_cycle.append(node_idx)
+    
+    for node_idx in has_cycle:
+        node_list.remove(node_idx)
 
     node_num = len(node_list)
     backup_dict["node_num"] = node_num
@@ -354,9 +371,11 @@ def generate_backup_dag_dict(dict, backup_ratio):
                 if succ_idx in dangling_idx:
                     new_c_idx = dict["node_num"]
                 
-                if new_p_idx != new_c_idx:
+                if new_p_idx != new_c_idx and new_p_idx in node_list and new_c_idx in node_list:
                     i = node_list.index(new_p_idx)
                     j = node_list.index(new_c_idx)
+
+                    # check if there 
                     adj_matrix[i][j] = 1
     
     backup_dict["adj_matrix"] = adj_matrix
