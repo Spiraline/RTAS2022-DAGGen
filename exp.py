@@ -33,9 +33,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    ### experiments argument
-    dag_num = args.dag_num
-
     base_loop_count = [int(b) for b in args.base.split(",")]
 
     dag_param = {
@@ -48,57 +45,76 @@ if __name__ == '__main__':
         "dangling_node_ratio" : args.dangling
     }
 
-    ### Make DAG and backup DAG
-    if args.file and os.path.exists(args.file):
-        dag_dict = import_dag_file(args.file)
-        normal_dag = generate_from_dict(dag_dict)
-    else:
-        normal_dag = generate_random_dag(**dag_param)
-        export_dag_file(normal_dag, 'dag.csv')
+    total_unaccept = [0, ] * (len(base_loop_count) + 2)
+    total_deadline_miss = [0, ] * (len(base_loop_count) + 2)
+    total_both = [0, ] * (len(base_loop_count) + 2)
 
-    backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, args.backup)
-    backup_dag = generate_from_dict(backup_dag_dict)
+    dag_idx = 0
+    while dag_idx < args.dag_num:
+        ### Make DAG and backup DAG
+        if args.file and os.path.exists(args.file):
+            dag_dict = import_dag_file(args.file)
+            normal_dag = generate_from_dict(dag_dict)
+        else:
+            normal_dag = generate_random_dag(**dag_param)
+            export_dag_file(normal_dag, 'dag.csv')
 
-    ### Make CPC model and assign priority
-    normal_cpc = construct_cpc(normal_dag)
-    backup_cpc = construct_cpc(backup_dag)
-    assign_priority(normal_cpc)
-    assign_priority(backup_cpc)
+        backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, args.backup)
+        backup_dag = generate_from_dict(backup_dag_dict)
 
-    ### Budget analysis
-    deadline = int((args.node_avg * args.node_num) / (args.core_num * args.density))
-    normal_dag.node_set[normal_dag.sl_node_idx].exec_t = args.sl_unit
-    backup_dag.node_set[backup_dag.sl_node_idx].exec_t = args.sl_unit
+        ### Make CPC model and assign priority
+        normal_cpc = construct_cpc(normal_dag)
+        backup_cpc = construct_cpc(backup_dag)
+        assign_priority(normal_cpc)
+        assign_priority(backup_cpc)
 
-    normal_classic_budget = classic_budget(normal_cpc, deadline, args.core_num)
-    backup_classic_budget = classic_budget(backup_cpc, deadline, args.core_num)
-    normal_cpc_budget = cpc_budget(normal_cpc, deadline, args.core_num, args.sl_unit)
-    backup_cpc_budget = cpc_budget(backup_cpc, deadline, args.core_num, args.sl_unit)
+        ### Budget analysis
+        deadline = int((args.node_avg * args.node_num) / (args.core_num * args.density))
+        normal_dag.node_set[normal_dag.sl_node_idx].exec_t = args.sl_unit
+        backup_dag.node_set[backup_dag.sl_node_idx].exec_t = args.sl_unit
 
-    # If budget is less than 0, DAG is infeasible
-    if normal_classic_budget <= 0 or normal_cpc_budget <= 0 or backup_classic_budget <= 0 or backup_cpc_budget <= 0:
-        print('infeasible DAG')
+        normal_classic_budget = classic_budget(normal_cpc, deadline, args.core_num)
+        backup_classic_budget = classic_budget(backup_cpc, deadline, args.core_num)
+        normal_cpc_budget = cpc_budget(normal_cpc, deadline, args.core_num, args.sl_unit)
+        backup_cpc_budget = cpc_budget(backup_cpc, deadline, args.core_num, args.sl_unit)
 
-    classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / args.sl_unit)
-    cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / args.sl_unit)
+        # If budget is less than 0, DAG is infeasible
+        if normal_classic_budget <= 0 or normal_cpc_budget <= 0 or backup_classic_budget <= 0 or backup_cpc_budget <= 0:
+            # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+            continue
 
-    loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
+        classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / args.sl_unit)
+        cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / args.sl_unit)
 
-    for max_lc in loop_count_list:
-        unac_one_dag = 0
-        miss_one_dag = 0
-        both = 0
-        for _ in range(args.iter_size):
-            isUnacceptable, lc = check_acceptance(max_lc, args.sl_exp, args.sl_std, args.acceptance)
-            isMiss = check_deadline_miss(normal_dag, args.core_num, lc, args.sl_unit, deadline) or check_deadline_miss(backup_dag, args.core_num, lc, args.sl_unit, deadline)
+        loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
 
-            if isUnacceptable and isMiss:
-                both += 1
-            elif isUnacceptable and not isMiss:
-                unac_one_dag += 1
-            elif not isUnacceptable and isMiss:
-                miss_one_dag += 1
-        
-        unac_one_dag /= args.iter_size
-        miss_one_dag /= args.iter_size
-        
+        for (lc_idx, max_lc) in enumerate(loop_count_list):
+            unac_one_dag = 0
+            miss_one_dag = 0
+            both_one_dag = 0
+            for _ in range(args.iter_size):
+                isUnacceptable, lc = check_acceptance(max_lc, args.sl_exp, args.sl_std, args.acceptance)
+                isMiss = check_deadline_miss(normal_dag, args.core_num, lc, args.sl_unit, deadline) or check_deadline_miss(backup_dag, args.core_num, lc, args.sl_unit, deadline)
+
+                if isUnacceptable and isMiss:
+                    both_one_dag += 1
+                elif isUnacceptable and not isMiss:
+                    unac_one_dag += 1
+                elif not isUnacceptable and isMiss:
+                    miss_one_dag += 1
+
+            total_unaccept[lc_idx] += unac_one_dag / args.iter_size
+            total_deadline_miss[lc_idx] += miss_one_dag / args.iter_size
+            total_both[lc_idx] += both_one_dag / args.iter_size
+
+        print('[' + str(dag_idx) + ']', loop_count_list)
+        dag_idx += 1
+    
+    for lc_idx in range(len(loop_count_list)):
+        total_unaccept[lc_idx] /= args.dag_num
+        total_deadline_miss[lc_idx] /= args.dag_num
+        total_both[lc_idx] /= args.dag_num
+
+    print(total_unaccept)
+    print(total_deadline_miss)
+    print(total_both)
