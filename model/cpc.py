@@ -262,7 +262,7 @@ def calculate_finish_time_bound(cpc, core_num):
         elif inf_path_num < core_num - 1:
             inf = 0
         else:
-            inf = math.ceil(sum([cpc.node_set[node_idx].exec_t for node_idx in node.I]) / (core_num - 1))
+            inf = math.ceil(sum([cpc.node_set[node_idx].exec_t for node_idx in node.I_e]) / (core_num - 1))
 
         node.f_t = node.exec_t + max_pred + inf
         
@@ -279,6 +279,21 @@ def calculate_finish_time_bound(cpc, core_num):
             if isReady:
                 ready_queue.append(cpc.node_set[succ_idx])
 
+def calculate_node_I_e(cpc, core_num):
+    for node in cpc.node_set:
+        high_p_list = [i for i in node.I if cpc.node_set[i].priority > node.priority]
+        low_p_list = [i for i in node.I if cpc.node_set[i].priority < node.priority]
+
+        low_p_list = sorted(low_p_list, key = lambda idx : cpc.node_set[idx].exec_t * (-1))
+
+        if len(low_p_list) > core_num - 1:
+            low_p_list = low_p_list[:core_num-1]
+
+        node.I_e = high_p_list + low_p_list
+
 def calculate_inference(cpc, core_num):
     calculate_I(cpc)
+    calculate_node_I_e(cpc, core_num)
     calculate_finish_time_bound(cpc, core_num)
+
+    print(cpc)
