@@ -141,6 +141,13 @@ def debug(file, **kwargs):
     
     loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
 
+    print(normal_classic_budget / sl_unit, backup_classic_budget / sl_unit, normal_cpc_budget / sl_unit, backup_cpc_budget / sl_unit)
+
+    for lc in range(300):
+        if check_deadline_miss(backup_dag, core_num, lc, sl_unit, deadline):
+            print('maximum possible budget in FP :', lc)
+            break
+
     print(loop_count_list)
 
     for (lc_idx, max_lc) in enumerate(loop_count_list):
