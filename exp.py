@@ -65,8 +65,9 @@ def syn_exp(**kwargs):
         cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / sl_unit)
 
         # If budget is less than 0, DAG is infeasible
-        if classic_loop_count <= 0 or cpc_loop_count <= 0:
-            # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+        if check_deadline_miss(normal_dag, core_num, cpc_loop_count, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, cpc_loop_count, sl_unit, deadline):
+        # if classic_loop_count <= 0 or cpc_loop_count <= 0:
+            print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
             continue
 
         loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
@@ -97,7 +98,7 @@ def syn_exp(**kwargs):
             #         print(density)
             #         export_dag_file(normal_dag, 'dag.csv')
 
-        # print('[' + str(dag_idx) + ']', loop_count_list)
+        print('[' + str(dag_idx) + ']', loop_count_list)
         dag_idx += 1
     
     for lc_idx in range(len(loop_count_list)):
