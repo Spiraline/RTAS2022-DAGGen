@@ -329,7 +329,7 @@ def calculate_beta_and_lambda_v_e(cpc):
         for v_idx in lambda_v_e:
             if cpc.node_set[v_idx].f_t - cpc.node_set[v_idx].exec_t >= f_theta:
                 beta += cpc.node_set[v_idx].exec_t
-            else:
+            elif cpc.node_set[v_idx].f_t > f_theta:
                 beta += cpc.node_set[v_idx].f_t - f_theta
         
         cpc.beta.append(beta)

@@ -27,6 +27,7 @@ def argmax(value_list, index_list=None):
             max_value = value_list[i]
     return max_index
 
+'''
 def calculate_critical_path(dag):
     distance = [0,] * len(dag.node_set)
     indegree = [0,] * len(dag.node_set)
@@ -59,6 +60,60 @@ def calculate_critical_path(dag):
     
     cp.reverse()
     return cp
+'''
+
+def calculate_critical_path(dag):
+    ready_queue = []
+    is_complete = [False, ] * len(dag.node_set)
+    longest = {}
+    max_len = {}
+
+    for node in dag.node_set:
+        if len(node.pred) == 0:
+            is_complete[node.tid] = True
+            longest[node.tid] = [node.tid]
+            max_len[node.tid] = node.exec_t
+
+            for succ_idx in node.succ:
+                if is_complete[succ_idx]:
+                    isReady = False
+                else:
+                    isReady = True
+                for pred_idx in dag.node_set[succ_idx].pred:
+                    if not is_complete[pred_idx]:
+                        isReady = False
+            
+                if isReady:
+                    ready_queue.append(dag.node_set[succ_idx])
+    
+    while False in is_complete:
+        node = ready_queue.pop()
+        longest_idx = node.pred[0]
+        longest_len = max_len[node.pred[0]]
+        for pred_idx in node.pred[1:]:
+            if longest_len < max_len[pred_idx]:
+                longest_idx = pred_idx
+                longest_len = max_len[pred_idx]
+        
+        longest[node.tid] = longest[longest_idx] + [node.tid]
+        max_len[node.tid] = max_len[longest_idx] + node.exec_t
+
+        is_complete[node.tid] = True
+
+        for succ_idx in node.succ:
+            if is_complete[succ_idx]:
+                isReady = False
+            else:
+                isReady = True
+            for pred_idx in dag.node_set[succ_idx].pred:
+                if not is_complete[pred_idx]:
+                    isReady = False
+        
+            if isReady:
+                ready_queue.append(dag.node_set[succ_idx])
+
+    longest_idx = argmax(max_len)
+    return longest[longest_idx]
 
 def generate_random_dag(**kwargs):
     node_num = randuniform(kwargs.get('node_num', [20, 3]))
@@ -163,6 +218,7 @@ def generate_random_dag(**kwargs):
                 succ_node.pred.append(pred_idx)
                 pred_node.succ.append(succ_idx)
 
+    dangling_dag.remove(sl_node_idx)
     dag.dangling_idx = dangling_dag
 
     ### 4. Make arc
@@ -328,7 +384,7 @@ def generate_backup_dag_dict(dict, backup_ratio):
     backup_dict["node_num"] = node_num
     backup_dict["start_node_idx"] = dict["start_node_idx"]
     backup_dict["sl_node_idx"] = dict["sl_node_idx"]
-    backup_dict["dangling_idx"] = [dict["sl_node_idx"]]
+    backup_dict["dangling_idx"] = []
 
     # Make new critical path index
     c_p = []

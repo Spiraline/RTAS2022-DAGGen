@@ -94,7 +94,7 @@ def syn_exp(**kwargs):
                 if both_one_dag > 0 or miss_one_dag > 0:
                     export_dag_file(normal_dag, 'dag.csv')
 
-        print('[' + str(dag_idx) + ']', loop_count_list)
+        # print('[' + str(dag_idx) + ']', loop_count_list)
         dag_idx += 1
     
     for lc_idx in range(len(loop_count_list)):
