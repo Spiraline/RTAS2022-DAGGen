@@ -356,7 +356,7 @@ def export_dag_file(dag, file_name):
         wr.writerow(dag.dict["exec_t"])
         wr.writerows(dag.dict["adj_matrix"])
 
-def generate_backup_dag_dict(dict, backup_ratio):
+def generate_backup_dag(dict, backup_ratio):
     backup_dict = {}
 
     dangling_idx = dict["dangling_idx"]
@@ -434,7 +434,13 @@ def generate_backup_dag_dict(dict, backup_ratio):
     
     backup_dict["adj_matrix"] = adj_matrix
 
-    return backup_dict
+    backup_dag = generate_from_dict(backup_dict)
+    # Make path with sl-node to critical path
+    # TODO : kinds of hard coding..
+    backup_dag.node_set[backup_dag.sl_node_idx].exec_t *= 10
+    backup_dag.critical_path = calculate_critical_path(backup_dag)
+
+    return backup_dag
 
 if __name__ == "__main__":
     dag_param_1 = {
@@ -462,7 +468,7 @@ if __name__ == "__main__":
 
     export_dag_file(dag2, 'hi.csv')
 
-    dict_from_file = import_dag_file('hi, csv')
+    dict_from_file = import_dag_file('hi.csv')
 
     dag3 = generate_from_dict(dict_from_file)
 

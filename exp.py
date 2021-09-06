@@ -1,9 +1,10 @@
 import math
-from model.dag import export_dag_file, generate_random_dag, generate_backup_dag_dict, generate_from_dict, import_dag_file
+from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
-from sched.fp import check_acceptance, check_deadline_miss
+from sched.fp import check_acceptance, check_deadline_miss, sched_fp
 from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
+import time
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
@@ -42,8 +43,7 @@ def syn_exp(**kwargs):
         ### Make DAG and backup DAG
         normal_dag = generate_random_dag(**dag_param)
 
-        backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, backup_ratio)
-        backup_dag = generate_from_dict(backup_dag_dict)
+        backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
 
         ### Make CPC model and assign priority
         normal_cpc = construct_cpc(normal_dag)
@@ -90,9 +90,12 @@ def syn_exp(**kwargs):
             total_deadline_miss[lc_idx] += miss_one_dag / instance_num
             total_both[lc_idx] += both_one_dag / instance_num
 
-            if lc_idx == len(loop_count_list) - 1:
-                if both_one_dag > 0 or miss_one_dag > 0:
-                    export_dag_file(normal_dag, 'dag.csv')
+            # if lc_idx == len(loop_count_list) - 1:
+            #     if both_one_dag > 0 or miss_one_dag > 0:
+            #         print(both_one_dag, miss_one_dag)
+            #         print(deadline)
+            #         print(density)
+            #         export_dag_file(normal_dag, 'dag.csv')
 
         # print('[' + str(dag_idx) + ']', loop_count_list)
         dag_idx += 1
@@ -118,8 +121,7 @@ def debug(file, **kwargs):
 
     dag_dict = import_dag_file(file)
     normal_dag = generate_from_dict(dag_dict)
-    backup_dag_dict = generate_backup_dag_dict(normal_dag.dict, backup_ratio)
-    backup_dag = generate_from_dict(backup_dag_dict)
+    backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
 
     normal_cpc = construct_cpc(normal_dag)
     backup_cpc = construct_cpc(backup_dag)
@@ -128,8 +130,6 @@ def debug(file, **kwargs):
 
     ### Budget analysis
     deadline = int((exec_avg * node_num) / (core_num * density))
-    normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
-    backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
     normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
     backup_classic_budget = classic_budget(backup_cpc, deadline, core_num)
@@ -145,7 +145,7 @@ def debug(file, **kwargs):
 
     for lc in range(300):
         if check_deadline_miss(backup_dag, core_num, lc, sl_unit, deadline):
-            print('maximum possible budget in FP :', lc)
+            print('maximum possible budget in FP :', lc-1)
             break
 
     print(loop_count_list)
