@@ -76,7 +76,7 @@ def get_noise(std):
 
 def count2score(x, sl_exp, std):
     delta = get_noise(std)
-    return max(1 - pow(math.e, -x/sl_exp) - math.fabs(delta), 0)
+    return max(1 - pow(math.e, -x/sl_exp+math.log(0.3)) - math.fabs(delta), 0)
 
 def score2count(score, sl_exp) :
     return math.floor((-1) * sl_exp * math.log(-score+1))

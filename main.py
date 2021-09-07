@@ -11,19 +11,19 @@ if __name__ == '__main__':
     parser.add_argument('--core_num', type=int, help='#cpu', default=4)
     parser.add_argument('--node_num', type=int, help='#node number in DAG', default=40)
     parser.add_argument('--depth', type=float, help='depth of DAG', default=6.5)
-    parser.add_argument('--backup_ratio', type=float, help='Backup node execution time rate', default=0.5)
-    parser.add_argument('--sl_unit', type=float, help='SL node execution unit time', default=5.0)
+    parser.add_argument('--backup_ratio', type=float, help='Backup node execution time rate', default=0.3)
+    parser.add_argument('--sl_unit', type=float, help='SL node execution unit time', default=8.0)
 
     parser.add_argument('--exec_avg', type=int, help='WCET average of nodes', default=40)
-    parser.add_argument('--exec_std', type=int, help='WCET std of nodes', default=10)
+    parser.add_argument('--exec_std', type=int, help='WCET std of nodes', default=20)
 
-    parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=30)
+    parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=5)
     parser.add_argument('--sl_std', type=float, help='variance for score function', default=1.0)
-    parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.95)
+    parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.9)
 
-    parser.add_argument('--base', type=str, help='list for value of base [small, large]', default='100,200')
+    parser.add_argument('--base', type=str, help='list for value of base [small, large]', default='50,100')
     parser.add_argument('--density', type=float, help='(avg execution time * node #) / (deadline * cpu #)', default=0.3)
-    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.2)    
+    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.3)
 
     parser.add_argument('--file', type=str, help='DAG csv file')
     parser.add_argument('--exp', type=str, help='what exp')

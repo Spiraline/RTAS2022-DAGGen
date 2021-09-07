@@ -65,8 +65,7 @@ def syn_exp(**kwargs):
         cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / sl_unit)
 
         # If budget is less than 0, DAG is infeasible
-        if check_deadline_miss(normal_dag, core_num, cpc_loop_count, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, cpc_loop_count, sl_unit, deadline):
-        # if classic_loop_count <= 0 or cpc_loop_count <= 0:
+        if check_deadline_miss(normal_dag, core_num, cpc_loop_count, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, cpc_loop_count, sl_unit, deadline) or classic_loop_count <= 0 or cpc_loop_count <= 0:
             print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
             continue
 
