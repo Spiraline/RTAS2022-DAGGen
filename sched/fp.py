@@ -94,6 +94,18 @@ def check_acceptance(max_lc, sl_exp, std, acceptable):
     
     return True, max_lc
 
+def calculate_acc(max_lc, sl_exp, std, acceptable):
+    max_tmp_acc = 0
+
+    for lc in range(1, max_lc+1):
+        tmp_acc = count2score(lc, sl_exp, std)
+        if max_tmp_acc < tmp_acc:
+            max_tmp_acc = tmp_acc
+        if tmp_acc > acceptable:
+            return max_tmp_acc
+    
+    return max_tmp_acc
+
 def check_deadline_miss(dag, core_num, lc, sl_unit, deadline):
     dag.node_set[dag.sl_node_idx].exec_t = lc * sl_unit
     makespan = sched_fp(dag.node_set, core_num)

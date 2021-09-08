@@ -1,10 +1,11 @@
 import math
 from model.dag import export_dag_file, generate_random_dag, generate_backup_dag, generate_from_dict, import_dag_file
 from model.cpc import construct_cpc, assign_priority
-from sched.fp import check_acceptance, check_deadline_miss, sched_fp
+from sched.fp import calculate_acc, check_acceptance, check_deadline_miss, sched_fp
 from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
 import time
+import csv
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
@@ -106,6 +107,83 @@ def syn_exp(**kwargs):
         total_both[lc_idx] /= dag_num
 
     return total_unaccept, total_deadline_miss, total_both
+
+def acc_exp(**kwargs):
+    dag_num = kwargs.get('dag_num', 100)
+    instance_num = kwargs.get('instance_num', 100)
+    core_num = kwargs.get('core_num', 4)
+    node_num = kwargs.get('node_num', 40)
+    depth = kwargs.get('depth', 6.5)
+    backup_ratio = kwargs.get('backup_ratio', 0.5)
+    sl_unit = kwargs.get('sl_unit', 5.0)
+    exec_avg = kwargs.get('exec_avg', 40)
+    exec_std = kwargs.get('exec_std', 10)
+    sl_exp = kwargs.get('sl_exp', 30)
+    sl_std = kwargs.get('sl_std', 1.0)
+    A_acc = kwargs.get('acceptance', 0.9)
+    base_loop_count = kwargs.get('base', [100, 200])
+    density = kwargs.get('density', 0.3)
+    extra_arc_ratio = kwargs.get('extra_arc_ratio', 0.1)
+    dangling_ratio = kwargs.get('dangling', 0.2)
+
+    dag_param = {
+        "node_num": [node_num, 0],
+        "depth": [depth, 1.5],
+        "exec_t": [exec_avg, exec_std],
+        "start_node": [1, 0],
+        "end_node": [1, 0],
+        "extra_arc_ratio" : extra_arc_ratio,
+        "dangling_node_ratio" : dangling_ratio
+    }
+
+    with open('acc.csv', 'w', newline='') as f:
+        wr = csv.writer(f)
+
+        dag_idx = 0
+        while dag_idx < dag_num:
+            ### Make DAG and backup DAG
+            normal_dag = generate_random_dag(**dag_param)
+
+            backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
+
+            ### Make CPC model and assign priority
+            normal_cpc = construct_cpc(normal_dag)
+            backup_cpc = construct_cpc(backup_dag)
+            assign_priority(normal_cpc)
+            assign_priority(backup_cpc)
+
+            ### Budget analysis
+            deadline = int((exec_avg * node_num) / (core_num * density))
+            normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
+            backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
+
+            normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+            backup_classic_budget = classic_budget(backup_cpc, deadline, core_num)
+            normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
+            backup_cpc_budget = cpc_budget(backup_cpc, deadline, core_num, sl_unit)
+
+            classic_loop_count = math.floor(min(normal_classic_budget, backup_classic_budget) / sl_unit)
+            cpc_loop_count = math.floor(min(normal_cpc_budget, backup_cpc_budget) / sl_unit)
+
+            # If budget is less than 0, DAG is infeasible
+            if check_deadline_miss(normal_dag, core_num, cpc_loop_count, sl_unit, deadline) or check_deadline_miss(backup_dag, core_num, cpc_loop_count, sl_unit, deadline) or classic_loop_count <= 0 or cpc_loop_count <= 0:
+                print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+                continue
+
+            loop_count_list = base_loop_count + [classic_loop_count, cpc_loop_count]
+
+            for _ in range(instance_num):
+                acc_list = []
+                for (lc_idx, max_lc) in enumerate(loop_count_list):
+                    acc = calculate_acc(max_lc, sl_exp, sl_std, A_acc)
+                    acc_list.append(acc)
+                wr.writerow(acc_list)
+
+            dag_idx += 1
+
+            print('[' + str(dag_idx) + ']', 'Complete')
+
+    return
 
 def debug(file, **kwargs):
     core_num = kwargs.get('core_num', 4)

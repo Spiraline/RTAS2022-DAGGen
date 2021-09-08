@@ -1,7 +1,7 @@
 import argparse
 import os
 import csv
-from exp import debug, syn_exp
+from exp import acc_exp, debug, syn_exp
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='argparse for synthetic test')
@@ -19,11 +19,11 @@ if __name__ == '__main__':
 
     parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=5)
     parser.add_argument('--sl_std', type=float, help='variance for score function', default=1.0)
-    parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.9)
+    parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.95)
 
     parser.add_argument('--base', type=str, help='list for value of base [small, large]', default='50,100')
     parser.add_argument('--density', type=float, help='(avg execution time * node #) / (deadline * cpu #)', default=0.3)
-    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.3)
+    parser.add_argument('--dangling', type=float, help='dangling DAG node # / total node #', default=0.2)
 
     parser.add_argument('--file', type=str, help='DAG csv file')
     parser.add_argument('--exp', type=str, help='what exp')
@@ -78,3 +78,6 @@ if __name__ == '__main__':
                 wr.writerow(un)
                 wr.writerow(dm)
                 wr.writerow(both)
+
+    elif args.exp == 'acc':
+        acc_exp(**exp_param)
