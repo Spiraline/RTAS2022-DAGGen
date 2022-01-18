@@ -136,7 +136,7 @@ def acc_exp(**kwargs):
         "dangling_node_ratio" : dangling_ratio
     }
 
-    with open('acc.csv', 'w', newline='') as f:
+    with open('res/acc.csv', 'w', newline='') as f:
         wr = csv.writer(f)
 
         dag_idx = 0
