@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('--core_num', type=int, help='#cpu', default=4)
     parser.add_argument('--node_num', type=int, help='#node number in DAG', default=40)
     parser.add_argument('--depth', type=float, help='depth of DAG', default=6.5)
-    parser.add_argument('--backup_ratio', type=float, help='Backup node execution time rate', default=0.3)
+    parser.add_argument('--backup_ratio', type=float, help='Backup node execution time rate', default=0.2)
     parser.add_argument('--sl_unit', type=float, help='SL node execution unit time', default=8.0)
 
     parser.add_argument('--exec_avg', type=int, help='WCET average of nodes', default=40)
