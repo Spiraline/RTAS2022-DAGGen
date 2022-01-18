@@ -2,8 +2,10 @@ import argparse
 import os
 import csv
 from exp import acc_exp, debug, syn_exp
+from datetime import datetime
 
 if __name__ == '__main__':
+    start_ts = datetime.now()
     parser = argparse.ArgumentParser(description='argparse for synthetic test')
     parser.add_argument('--dag_num', type=int, help='Test DAG number', default=100)
     parser.add_argument('--instance_num', type=int, help='#iterative per 1 DAG', default=100)
@@ -81,3 +83,6 @@ if __name__ == '__main__':
 
     elif args.exp == 'acc':
         acc_exp(**exp_param)
+
+    end_ts = datetime.now()
+    print('[System] Execution time : %s' % str(end_ts - start_ts))
