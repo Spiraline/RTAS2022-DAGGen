@@ -138,6 +138,7 @@ def acc_exp(**kwargs):
 
     with open('res/acc.csv', 'w', newline='') as f:
         wr = csv.writer(f)
+        wr.writerow(['Base Small', 'Base Large', 'Ours Classic', 'Ours CPC'])
 
         dag_idx = 0
         while dag_idx < dag_num:
