@@ -60,12 +60,13 @@ if __name__ == '__main__':
             exp_param["density"] = d_f
             un, dm, both = syn_exp(**exp_param)
 
-            file_name = 'density_' + str(d) + '.csv'
+            file_name = 'res/density_' + str(d) + '.csv'
             with open(file_name, 'w', newline='') as f:
                 wr = csv.writer(f)
-                wr.writerow(un)
-                wr.writerow(dm)
-                wr.writerow(both)
+                wr.writerow(['Failure Type', 'Base Small', 'Base Large', 'Ours Classic', 'Ours CPC'])
+                wr.writerow(['Unacceptable Result'] + un)
+                wr.writerow(['Deadline Miss'] + dm)
+                wr.writerow(['Both'] + both)
 
     elif args.exp == 'std':
         for s in range(6, 15, 2):
@@ -74,7 +75,7 @@ if __name__ == '__main__':
             exp_param["sl_std"] = s_f
             un, dm, both = syn_exp(**exp_param)
 
-            file_name = 'std_' + str(s) + '.csv'
+            file_name = 'res/std_' + str(s) + '.csv'
             with open(file_name, 'w', newline='') as f:
                 wr = csv.writer(f)
                 wr.writerow(un)
