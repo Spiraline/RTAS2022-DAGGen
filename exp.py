@@ -41,7 +41,6 @@ def syn_exp(**kwargs):
     while dag_idx < dag_num:
         ### Make DAG and backup DAG
         normal_dag = generate_random_dag(**dag_param)
-
         backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
 
         ### Make CPC model and assign priority
@@ -52,6 +51,10 @@ def syn_exp(**kwargs):
 
         ### Budget analysis
         deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        normal_dag.dict["deadline"] = deadline
+        backup_dag.dict["deadline"] = deadline
+        normal_dag.dict["backup_exec_t"] = backup_dag.dict["backup_exec_t"]
+
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
         backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
@@ -141,7 +144,6 @@ def acc_exp(**kwargs):
         while dag_idx < dag_num:
             ### Make DAG and backup DAG
             normal_dag = generate_random_dag(**dag_param)
-
             backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
 
             ### Make CPC model and assign priority
@@ -152,6 +154,10 @@ def acc_exp(**kwargs):
 
             ### Budget analysis
             deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+            normal_dag.dict["deadline"] = deadline
+            backup_dag.dict["deadline"] = deadline
+            normal_dag.dict["backup_exec_t"] = backup_dag.dict["backup_exec_t"]
+            
             normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
             backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
@@ -185,30 +191,27 @@ def acc_exp(**kwargs):
 
 def debug(file, **kwargs):
     core_num = kwargs.get('core_num', 4)
-    backup_ratio = kwargs.get('backup_ratio', 0.5)
-    sl_unit = kwargs.get('sl_unit', 5.0)
-    exec_t = kwargs.get('exec_t', [40,10])
+    sl_unit = kwargs.get('sl_unit', 8.0)
     sl_exp = kwargs.get('sl_exp', 30)
     sl_std = kwargs.get('sl_std', 1.0)
     A_acc = kwargs.get('A_acc', 0.95)
     base_loop_count = kwargs.get('base', [100, 200])
-    density = kwargs.get('density', 0.3)
 
     dag_dict = import_dag_file(file)
     normal_dag = generate_from_dict(dag_dict)
-    backup_dag = generate_backup_dag(normal_dag.dict, backup_ratio)
+    backup_dag = generate_backup_dag(normal_dag.dict)
+
+    deadline = dag_dict["deadline"]
+
+    print(normal_dag)
+    print(backup_dag)
 
     normal_cpc = construct_cpc(normal_dag)
     backup_cpc = construct_cpc(backup_dag)
     assign_priority(normal_cpc)
     assign_priority(backup_cpc)
 
-    node_num = len(normal_dag.node_set)
-    exec_avg = exec_t[0]
-
     ### Budget analysis
-    deadline = int((exec_avg * node_num) / (core_num * density))
-
     normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
     backup_classic_budget = classic_budget(backup_cpc, deadline, core_num)
     normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
