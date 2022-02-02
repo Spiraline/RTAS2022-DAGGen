@@ -3,6 +3,7 @@ import os
 import csv
 from exp import acc_exp, debug, syn_exp
 from datetime import datetime
+from os import makedirs
 
 if __name__ == '__main__':
     start_ts = datetime.now()
@@ -11,14 +12,12 @@ if __name__ == '__main__':
     parser.add_argument('--instance_num', type=int, help='#iterative per 1 DAG', default=100)
 
     parser.add_argument('--core_num', type=int, help='#cpu', default=4)
-    parser.add_argument('--node_num', type=int, help='#node number in DAG', default=40)
-    parser.add_argument('--depth', type=float, help='depth of DAG', default=6.5)
+    parser.add_argument('--node_num', type=str, help='#node number in DAG', default="40,10")
+    parser.add_argument('--depth', type=str, help='depth of DAG', default="6.5,1.5")
+    parser.add_argument('--exec_t', type=str, help='WCET average of nodes', default="40,10")
+    
     parser.add_argument('--backup_ratio', type=float, help='Backup node execution time rate', default=0.2)
     parser.add_argument('--sl_unit', type=float, help='SL node execution unit time', default=8.0)
-
-    parser.add_argument('--exec_avg', type=int, help='WCET average of nodes', default=40)
-    parser.add_argument('--exec_std', type=int, help='WCET std of nodes', default=20)
-
     parser.add_argument('--sl_exp', type=int, help='exponential of SL node', default=5)
     parser.add_argument('--sl_std', type=float, help='variance for score function', default=1.0)
     parser.add_argument('--acceptance', type=float, help='Acceptance bar for score function', default=0.95)
@@ -32,20 +31,21 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
+    makedirs("res", exist_ok=True)
+
     exp_param = {
         "dag_num" : args.dag_num,
         "instance_num" : args.instance_num,
         "core_num" : args.core_num,
-        "node_num" : args.node_num,
-        "depth" : args.depth,
+        "node_num" : [int(e) for e in args.node_num.split(",")],
+        "depth" : [float(e) for e in args.depth.split(",")],
+        "exec_t" : [float(e) for e in args.exec_t.split(",")],
         "backup_ratio" : args.backup_ratio,
         "sl_unit" : args.sl_unit,
-        "exec_avg" : args.exec_avg,
-        "exec_std" : args.exec_std,
         "sl_exp" : args.sl_exp,
         "sl_std" : args.sl_std,
         "acceptance" : args.acceptance,
-        "base" : [int(b) for b in args.base.split(",")],
+        "base" : [int(e) for e in args.base.split(",")],
         "density" : args.density,
         "dangling" : args.dangling
     }    

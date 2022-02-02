@@ -4,19 +4,17 @@ from model.cpc import construct_cpc, assign_priority
 from sched.fp import calculate_acc, check_acceptance, check_deadline_miss, sched_fp
 from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
-import time
 import csv
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
     instance_num = kwargs.get('instance_num', 100)
     core_num = kwargs.get('core_num', 4)
-    node_num = kwargs.get('node_num', 40)
-    depth = kwargs.get('depth', 6.5)
+    node_num = kwargs.get('node_num', [40,10])
+    depth = kwargs.get('depth', [6.5,1.5])
     backup_ratio = kwargs.get('backup_ratio', 0.5)
+    exec_t = kwargs.get('exec_t', [40,10])
     sl_unit = kwargs.get('sl_unit', 5.0)
-    exec_avg = kwargs.get('exec_avg', 40)
-    exec_std = kwargs.get('exec_std', 10)
     sl_exp = kwargs.get('sl_exp', 30)
     sl_std = kwargs.get('sl_std', 1.0)
     A_acc = kwargs.get('A_acc', 0.95)
@@ -26,9 +24,9 @@ def syn_exp(**kwargs):
     dangling_ratio = kwargs.get('dangling_ratio', 0.2)
 
     dag_param = {
-        "node_num": [node_num, 0],
-        "depth": [depth, 1.5],
-        "exec_t": [exec_avg, exec_std],
+        "node_num": node_num,
+        "depth": depth,
+        "exec_t": exec_t,
         "start_node": [1, 0],
         "end_node": [1, 0],
         "extra_arc_ratio" : extra_arc_ratio,
@@ -53,7 +51,7 @@ def syn_exp(**kwargs):
         assign_priority(backup_cpc)
 
         ### Budget analysis
-        deadline = int((exec_avg * node_num) / (core_num * density))
+        deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
         normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
         backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
@@ -112,12 +110,11 @@ def acc_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
     instance_num = kwargs.get('instance_num', 100)
     core_num = kwargs.get('core_num', 4)
-    node_num = kwargs.get('node_num', 40)
-    depth = kwargs.get('depth', 6.5)
+    node_num = kwargs.get('node_num', [40,10])
+    depth = kwargs.get('depth', [6.5,1.5])
     backup_ratio = kwargs.get('backup_ratio', 0.5)
     sl_unit = kwargs.get('sl_unit', 5.0)
-    exec_avg = kwargs.get('exec_avg', 40)
-    exec_std = kwargs.get('exec_std', 10)
+    exec_t = kwargs.get('exec_t', [40,10])
     sl_exp = kwargs.get('sl_exp', 30)
     sl_std = kwargs.get('sl_std', 1.0)
     A_acc = kwargs.get('acceptance', 0.9)
@@ -127,9 +124,9 @@ def acc_exp(**kwargs):
     dangling_ratio = kwargs.get('dangling', 0.2)
 
     dag_param = {
-        "node_num": [node_num, 0],
-        "depth": [depth, 1.5],
-        "exec_t": [exec_avg, exec_std],
+        "node_num": node_num,
+        "depth": depth,
+        "exec_t": exec_t,
         "start_node": [1, 0],
         "end_node": [1, 0],
         "extra_arc_ratio" : extra_arc_ratio,
@@ -154,7 +151,7 @@ def acc_exp(**kwargs):
             assign_priority(backup_cpc)
 
             ### Budget analysis
-            deadline = int((exec_avg * node_num) / (core_num * density))
+            deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
             normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
             backup_dag.node_set[backup_dag.sl_node_idx].exec_t = sl_unit
 
@@ -188,10 +185,9 @@ def acc_exp(**kwargs):
 
 def debug(file, **kwargs):
     core_num = kwargs.get('core_num', 4)
-    node_num = kwargs.get('node_num', 40)
     backup_ratio = kwargs.get('backup_ratio', 0.5)
     sl_unit = kwargs.get('sl_unit', 5.0)
-    exec_avg = kwargs.get('exec_avg', 40)
+    exec_t = kwargs.get('exec_t', [40,10])
     sl_exp = kwargs.get('sl_exp', 30)
     sl_std = kwargs.get('sl_std', 1.0)
     A_acc = kwargs.get('A_acc', 0.95)
@@ -206,6 +202,9 @@ def debug(file, **kwargs):
     backup_cpc = construct_cpc(backup_dag)
     assign_priority(normal_cpc)
     assign_priority(backup_cpc)
+
+    node_num = len(normal_dag.node_set)
+    exec_avg = exec_t[0]
 
     ### Budget analysis
     deadline = int((exec_avg * node_num) / (core_num * density))

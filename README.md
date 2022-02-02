@@ -1,15 +1,34 @@
 # DAGGen
 Random DAG Generator
 
-### Usage
+## Usage
+
+### Accuracy Experiment
 
 ```
-python3 dag_gen.py
+python3 main.py --exp acc
 ```
 
-### Parameter
+For `dag_num` = 10,000, 
 
-* `task_num` ([mean, dev]): set the number of tasks between `[mean-dev, mean+dev]`
+### Density Experiment
+
+```
+python3 main.py --exp density
+```
+
+### Visualization
+
+```
+python3 main.py --exp acc
+```
+
+## Parameter
+
+* `dag_num` (int): set the number of DAGs
+* `instance_num` (int): set the number of instances
+* `core_num` (int): set the number of cores
+* `node_num` ([mean, dev]): set the number of nodes between `[mean-dev, mean+dev]`
 * `depth` ([mean, dev]): set the depth of DAG between `[mean-dev, mean+dev]`
 * `start_node` ([mean, dev]): set the number of start node (entry node) between `[mean-dev, mean+dev]`
 * `exec_t` ([mean, dev]): set the execution time of task between `[mean-dev, mean+dev]`
