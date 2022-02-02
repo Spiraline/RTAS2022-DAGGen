@@ -1,0 +1,20 @@
+exp: acc
+dag_file: 
+
+dag_num: 100
+instance_num: 100
+
+core_num: 4
+node_num: [40,10]
+depth: [6.5,1.5]
+exec_t: [40,10]
+
+backup_ratio: 0.2
+sl_unit: 8.0
+sl_exp: 5
+sl_std: 1.0
+acceptance_threshold: 0.95
+
+baseline: [50,100]
+density: 0.3
+dangling_ratio: 0.2
