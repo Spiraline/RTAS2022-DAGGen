@@ -1,7 +1,7 @@
 exp: density
 density_range: [20,71,5]
 
-dag_num: 100
+dag_num: 10000
 instance_num: 100
 
 core_num: 4
