@@ -27,41 +27,6 @@ def argmax(value_list, index_list=None):
             max_value = value_list[i]
     return max_index
 
-'''
-def calculate_critical_path(dag):
-    distance = [0,] * len(dag.node_set)
-    indegree = [0,] * len(dag.node_set)
-    task_queue = []
-
-    for i in range(len(dag.node_set)) :
-        if len(dag.node_set[i].pred) == 0 :
-            task_queue.append(dag.node_set[i])
-            distance[i] = dag.node_set[i].exec_t
-
-    for i, v in enumerate(dag.node_set):
-        indegree[i] = len(v.pred)
-
-    while task_queue :
-        vertex = task_queue.pop(0)
-        for v in vertex.succ :
-            distance[v] = max(dag.node_set[v].exec_t + distance[vertex.tid], distance[v]) 
-            indegree[v] -= 1
-            if indegree[v] == 0 :
-                task_queue.append(dag.node_set[v])
-
-    cp = []
-    cv = argmax(distance)
-
-    while True :
-        cp.append(cv)
-        if len(dag.node_set[cv].pred) == 0 :
-            break
-        cv = argmax(distance, dag.node_set[cv].pred)
-    
-    cp.reverse()
-    return cp
-'''
-
 def calculate_critical_path(dag):
     ready_queue = []
     is_complete = [False, ] * len(dag.node_set)
@@ -337,7 +302,9 @@ def import_dag_file(file):
         dag_dict["sl_node_idx"] = int(next(rd)[0])
         dag_dict["dangling_idx"] = [int(e) for e in next(rd)]
         dag_dict["critical_path"] = [int(e) for e in next(rd)]
-        dag_dict["exec_t"] = [int(e) for e in next(rd)]
+        dag_dict["exec_t"] = [float(e) for e in next(rd)]
+        dag_dict["deadline"] = int(next(rd)[0])
+        dag_dict["backup_exec_t"] = float(next(rd)[0])
         adj = []
         for line in rd:
             adj.append([int(e) for e in line])
@@ -354,9 +321,11 @@ def export_dag_file(dag, file_name):
         wr.writerow(dag.dict["dangling_idx"])
         wr.writerow(dag.dict["critical_path"])
         wr.writerow(dag.dict["exec_t"])
+        wr.writerow(dag.dict["deadline"])
+        wr.writerow(dag.dict["backup_exec_t"])
         wr.writerows(dag.dict["adj_matrix"])
 
-def generate_backup_dag(dict, backup_ratio):
+def generate_backup_dag(dict, backup_ratio=0.5):
     backup_dict = {}
 
     dangling_idx = dict["dangling_idx"]
@@ -399,9 +368,12 @@ def generate_backup_dag(dict, backup_ratio):
 
     # Calculate backup node execution time
     backup_exec_t = 0
-    for idx in dangling_idx:
-        backup_exec_t += dict["exec_t"][idx]
-    backup_exec_t = round(backup_exec_t * backup_ratio)
+    if "backup_exec_t" in dict:
+        backup_exec_t = dict["backup_exec_t"]
+    else:
+        for idx in dangling_idx:
+            backup_exec_t += dict["exec_t"][idx]
+        backup_exec_t = round(backup_exec_t * backup_ratio)
 
     exec_t_arr = []
     for idx in node_list[:-1]:
@@ -435,10 +407,10 @@ def generate_backup_dag(dict, backup_ratio):
     backup_dict["adj_matrix"] = adj_matrix
 
     backup_dag = generate_from_dict(backup_dict)
-    # Make path with sl-node to critical path
-    # TODO : kinds of hard coding..
     backup_dag.node_set[backup_dag.sl_node_idx].exec_t *= 10
     backup_dag.critical_path = calculate_critical_path(backup_dag)
+
+    backup_dag.dict["backup_exec_t"] = backup_exec_t
 
     return backup_dag
 
