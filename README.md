@@ -3,26 +3,26 @@ Random DAG Generator
 
 ## Requirement
 ```
-python3 -m pip install PyYAML matplotlib pandas
+python -m pip install PyYAML matplotlib pandas
 ```
 
 ## Usage
 
 ### Accuracy Experiment
 ```
-python3 main.py -c acc.yaml
+python main.py -c acc.yaml
 ```
 
 For `dag_num` = 10,000, 
 
 ### Density Experiment
 ```
-python3 main.py --c density.yaml
+python main.py --c density.yaml
 ```
 
 ### Std Experiment
 ```
-python3 main.py --c std.yaml
+python main.py --c std.yaml
 ```
 
 ### Visualization

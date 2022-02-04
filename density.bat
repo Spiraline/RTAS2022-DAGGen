@@ -1,2 +1,3 @@
-python3 main.py -c density.yaml
-python3 viz/density.py
+python main.py -c density.yaml
+python viz/density.py
+pause
