@@ -41,7 +41,8 @@ plt.xticks([i for i in range(len(density_list))], density_list)
 
 plt.legend(bbox_to_anchor=(0.62, 0.6))
 # plt.show()
-fig.savefig('res/fig11_density.png')
+fig.savefig('res/fig11b.png')
+print("Fig. 11b Saved")
 # fig.savefig('res/fig11_density.eps', format='eps')
 
 ### Failure Type for baseline
@@ -71,4 +72,5 @@ plt.xticks(axis_list, ['S  L\n'+i for i in ['0.20', '0.25', '0.30', '0.35', '0.4
 
 # plt.show()
 # fig.savefig('res/fig11_failure.eps', format='eps')
-fig.savefig('res/fig11_failure.png')
+fig.savefig('res/fig11c.png')
+print("Fig. 11c Saved")

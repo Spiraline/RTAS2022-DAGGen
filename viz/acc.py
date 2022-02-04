@@ -35,5 +35,7 @@ ax1.axhline(0.95, color='black', lw=2, linestyle="--")
 plt.xticks([i+1 for i in range(len(header))], header)
 
 # plt.show()
-fig.savefig("res/fig11_acc.png")
+fig.savefig("res/fig11a.png")
 # fig.savefig("res/fig11_acc.eps", format='eps')
+
+print("Fig. 11a Saved")
