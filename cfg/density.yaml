@@ -1,5 +1,5 @@
 exp: density
-exp_range: [20,71,5]
+density_range: [20,71,5]
 
 dag_num: 100
 instance_num: 100

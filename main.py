@@ -39,7 +39,7 @@ if __name__ == '__main__':
     }
 
     if config_dict["exp"] == 'density':
-        for d in range(config_dict["exp_range"][0], config_dict["exp_range"][1], config_dict["exp_range"][2]):
+        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)
             print('Density %f start' % d_f)
             exp_param["density"] = d_f
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                 wr.writerow(['Deadline Miss'] + dm)
                 wr.writerow(['Both'] + both)
     elif config_dict["exp"] == 'std':
-        for s in range(config_dict["exp_range"][0], config_dict["exp_range"][1], config_dict["exp_range"][2]):
+        for s in range(config_dict["std_range"][0], config_dict["std_range"][1], config_dict["std_range"][2]):
             s_f = round(s / 10, 1)
             print('Density %f start' % s_f)
             
