@@ -45,7 +45,8 @@ ax.set_ylabel('Critical Failure Ratio')
 
 plt.xticks([i for i in range(len(density_list))], ['0.'+str(i) for i in density_list])
 
-plt.legend(bbox_to_anchor=(0.62, 0.6))
+plt.legend()
+# plt.legend(bbox_to_anchor=(0.62, 0.6))
 # plt.show()
 fig.savefig('res/fig11b.png')
 print("Fig. 11b Saved")
@@ -72,7 +73,8 @@ l2 = mpatches.Patch(color='lightgray', hatch='///', label='Both')
 l3 = mpatches.Patch(color='lightgray', label='Unacceptable Result')
 
 l1.set_edgecolor('black') ; l2.set_edgecolor('black') ; l3.set_edgecolor('black')
-plt.legend(handles=[l1, l2, l3], bbox_to_anchor=(0.47, 0.99))
+plt.legend(handles=[l1, l2, l3])
+# plt.legend(handles=[l1, l2, l3], bbox_to_anchor=(0.47, 0.99))
 
 plt.xticks(axis_list, ['S  L\n0.'+str(i) for i in density_list])
 
