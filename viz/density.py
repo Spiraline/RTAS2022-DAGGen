@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from os import listdir
 
 small_total_failure = []
 large_total_failure = []
@@ -9,8 +10,14 @@ small_failure_type = [[], [], []]
 large_failure_type = [[], [], []]
 density_list = []
 
-for i in range(20, 71, 5):
-    with open("res/density_{}.csv".format(i), 'r') as f:
+for name in listdir('res'):
+    if name.split(".")[-1] == 'csv' and name.split("_")[0] == "density":
+        density_list.append(int(name.split("_")[-1].split(".")[0]))
+
+density_list.sort()
+
+for d in density_list:
+    with open("res/density_{}.csv".format(d), 'r') as f:
         header = f.readline()
         baseline_small = 0
         baseline_large = 0
@@ -23,7 +30,6 @@ for i in range(20, 71, 5):
         large_total_failure.append(baseline_large)
         classic_total_failure.append(0)
         cpc_total_failure.append(0)
-    density_list.append(str(round(i/100, 2)))
 
 plt.rcParams['font.size'] = 12
 
@@ -37,7 +43,7 @@ ax.plot([v for v in cpc_total_failure], label='Ours CPC', marker='x', color='bla
 ax.set_xlabel('Density')
 ax.set_ylabel('Critical Failure Ratio')
 
-plt.xticks([i for i in range(len(density_list))], density_list)
+plt.xticks([i for i in range(len(density_list))], ['0.'+str(i) for i in density_list])
 
 plt.legend(bbox_to_anchor=(0.62, 0.6))
 # plt.show()
@@ -68,7 +74,7 @@ l3 = mpatches.Patch(color='lightgray', label='Unacceptable Result')
 l1.set_edgecolor('black') ; l2.set_edgecolor('black') ; l3.set_edgecolor('black')
 plt.legend(handles=[l1, l2, l3], bbox_to_anchor=(0.47, 0.99))
 
-plt.xticks(axis_list, ['S  L\n'+i for i in ['0.20', '0.25', '0.30', '0.35', '0.40', '0.45', '0.50', '0.5', '0.60', '0.65', '0.70']])
+plt.xticks(axis_list, ['S  L\n0.'+str(i) for i in density_list])
 
 # plt.show()
 # fig.savefig('res/fig11_failure.eps', format='eps')
