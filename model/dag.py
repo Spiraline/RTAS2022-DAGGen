@@ -1,6 +1,7 @@
 from random import randint, shuffle
 import math
 import csv
+from collections import deque
 
 if __name__ == "__main__":
     from models import Node, DAG
@@ -125,8 +126,15 @@ def generate_random_dag(**kwargs):
 
     dag.start_node_idx = level_arr[0]
 
+    Q = deque()
+    rev_Q = deque()
+
+    for node_idx in dag.start_node_idx:
+        Q.append(node_idx)
+
     for node_idx in level_arr[-1]:
         dag.node_set[node_idx].isLeaf = True
+        rev_Q.append(node_idx)
 
     ### 3. Assign critical path, dangling nodes
     # Add edge for critical path
@@ -239,6 +247,54 @@ def generate_random_dag(**kwargs):
     for node in dag.node_set:
         node.succ.sort()
         node.pred.sort()
+
+    # calculate est (earliest start time)
+    while Q:
+        node_idx = Q.popleft()
+        node = dag.node_set[node_idx]
+        if len(node.pred) == 0:
+            node.est = 0
+        else:
+            est = 0
+            for pred_idx in node.pred:
+                if dag.node_set[pred_idx].est + dag.node_set[pred_idx].exec_t > est:
+                    est = dag.node_set[pred_idx].est + dag.node_set[pred_idx].exec_t
+            node.est = est
+        
+        for succ_idx in node.succ:
+            if dag.node_set[succ_idx].est >= 0:
+                continue
+            shouldAdd = True
+            for succ_pred_idx in dag.node_set[succ_idx].pred:
+                if dag.node_set[succ_pred_idx].est == -1:
+                    shouldAdd = False
+                    break
+            if shouldAdd:
+                Q.append(succ_idx)
+
+    # calculate ltc (least time to completion)
+    while rev_Q:
+        node_idx = rev_Q.popleft()
+        node = dag.node_set[node_idx]
+        if len(node.succ) == 0:
+            node.ltc = 0
+        else:
+            ltc = 0
+            for succ_idx in node.succ:
+                if dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t > ltc:
+                    ltc = dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t
+            node.est = est
+        
+        for pred_idx in node.pred:
+            if dag.node_set[pred_idx].est >= 0:
+                continue
+            shouldAdd = True
+            for pred_succ_idx in dag.node_set[pred_idx].succ:
+                if dag.node_set[pred_succ_idx].est == -1:
+                    shouldAdd = False
+                    break
+            if shouldAdd:
+                Q.append(pred_idx)
 
     ### 5. Saving DAG info
     # dag.dict["isBackup"] = False

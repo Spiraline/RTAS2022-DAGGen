@@ -12,6 +12,9 @@ class Node(object):
         self.isLeaf = False
         self.level = 0
 
+        self.est = -1
+        self.ltc = -1
+
         # Assigned after CPCGen
         self.priority = -1                          # v_j's priority
         self.anc = []                               # A list of v_j's ancestor nodes

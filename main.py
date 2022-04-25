@@ -38,6 +38,8 @@ if __name__ == '__main__':
         "dangling" : config_dict["dangling_ratio"]
     }
 
+    if config_dict["exp"] == 'budget':
+        syn_exp(**exp_param)
     if config_dict["exp"] == 'density':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)
