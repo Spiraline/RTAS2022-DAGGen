@@ -53,7 +53,9 @@ def budget_compare(**kwargs):
         normal_pr_classic_budget = preemptive_classic_budget(normal_cpc, deadline, core_num)       
         normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
 
-    pass
+        print(normal_classic_budget, normal_pr_classic_budget, normal_cpc_budget)
+
+        dag_idx += 1
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)

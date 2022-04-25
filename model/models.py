@@ -29,9 +29,9 @@ class Node(object):
         self.actual_delay = 0                       # v_j's actual delay from interference group considering priority
 
     def __str__(self):
-        res = "%-9s %-3d %-4d %40s %40s %4d %40s %40s" \
+        res = "%-9s %-3d %-4d %40s %40s %4d %40s %40s %4d %4d" \
             % ('[' + self.name + ']', self.priority, self.exec_t, self.pred, self.succ,
-                self.f_t, self.I, self.I_e)
+                self.f_t, self.I, self.I_e, self.est, self.ltc)
 
         return res
 
@@ -74,7 +74,7 @@ class CPC(object):
         self.res_t = []
 
     def __str__(self):
-        print("%-9s %-3s %-5s %38s %40s %4s %40s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node', 'f_t', 'I', 'I_e'))
+        print("%-9s %-3s %-5s %38s %40s %4s %40s %40s %4d %4d" % ('name', 'pri', 'exec_t', 'pred node', 'succ node', 'f_t', 'I', 'I_e', 'est', 'ltc'))
         for task in self.node_set:
             print(task)
 

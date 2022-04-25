@@ -2,7 +2,7 @@ import argparse
 import os
 import csv
 import yaml
-from exp import acc_exp, debug, syn_exp
+from exp import acc_exp, budget_compare, debug, syn_exp
 from datetime import datetime
 from os import makedirs
 from os.path import exists
@@ -39,8 +39,8 @@ if __name__ == '__main__':
     }
 
     if config_dict["exp"] == 'budget':
-        syn_exp(**exp_param)
-    if config_dict["exp"] == 'density':
+        budget_compare(**exp_param)
+    elif config_dict["exp"] == 'density':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)
             print('Density %f start' % d_f)

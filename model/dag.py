@@ -250,6 +250,7 @@ def generate_random_dag(**kwargs):
 
     # calculate est (earliest start time)
     while Q:
+        print(Q)
         node_idx = Q.popleft()
         node = dag.node_set[node_idx]
         if len(node.pred) == 0:
@@ -283,18 +284,18 @@ def generate_random_dag(**kwargs):
             for succ_idx in node.succ:
                 if dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t > ltc:
                     ltc = dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t
-            node.est = est
+            node.ltc = ltc
         
         for pred_idx in node.pred:
-            if dag.node_set[pred_idx].est >= 0:
+            if dag.node_set[pred_idx].ltc >= 0:
                 continue
             shouldAdd = True
             for pred_succ_idx in dag.node_set[pred_idx].succ:
-                if dag.node_set[pred_succ_idx].est == -1:
+                if dag.node_set[pred_succ_idx].ltc == -1:
                     shouldAdd = False
                     break
             if shouldAdd:
-                Q.append(pred_idx)
+                rev_Q.append(pred_idx)
 
     ### 5. Saving DAG info
     # dag.dict["isBackup"] = False

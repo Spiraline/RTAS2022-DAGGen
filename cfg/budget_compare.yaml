@@ -3,8 +3,8 @@ dag_file:
 density_range: [20,71,5]
 std_range: [6,15,2]
 
-dag_num: 100
-instance_num: 100
+dag_num: 1
+instance_num: 1
 
 core_num: 4
 node_num: [40,10]
