@@ -39,7 +39,8 @@ if __name__ == '__main__':
     }
 
     if config_dict["exp"] == 'budget':
-        budget_compare(**exp_param)
+        pr_cl, cpc = budget_compare(**exp_param)
+        print(pr_cl, cpc)
     elif config_dict["exp"] == 'density':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)

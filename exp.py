@@ -20,7 +20,7 @@ def budget_compare(**kwargs):
     sl_std = kwargs.get('sl_std', 1.0)
     A_acc = kwargs.get('A_acc', 0.95)
     base_loop_count = kwargs.get('base', [100, 200])
-    density = kwargs.get('density', 0.3)
+    density = kwargs.get('density', 0.6)
     extra_arc_ratio = kwargs.get('extra_arc_ratio', 0.1)
     dangling_ratio = kwargs.get('dangling_ratio', 0.2)
 
@@ -35,6 +35,10 @@ def budget_compare(**kwargs):
     }
 
     dag_idx = 0
+    
+    pr_cl_ratio = 0
+    cpc_ratio = 0
+
     while dag_idx < dag_num:
         ### Make DAG and backup DAG
         normal_dag = generate_random_dag(**dag_param)
@@ -53,9 +57,15 @@ def budget_compare(**kwargs):
         normal_pr_classic_budget = preemptive_classic_budget(normal_cpc, deadline, core_num)       
         normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
 
-        print(normal_classic_budget, normal_pr_classic_budget, normal_cpc_budget)
+        if normal_classic_budget <= 0 or normal_pr_classic_budget <= 0 or normal_cpc_budget <= 0:
+            continue
+
+        pr_cl_ratio += normal_pr_classic_budget / normal_classic_budget
+        cpc_ratio += normal_cpc_budget / normal_classic_budget
 
         dag_idx += 1
+    
+    return pr_cl_ratio / dag_num, cpc_ratio / dag_num
 
 def syn_exp(**kwargs):
     dag_num = kwargs.get('dag_num', 100)

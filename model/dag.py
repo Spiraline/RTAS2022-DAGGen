@@ -1,4 +1,4 @@
-from random import randint, shuffle
+from random import randint, shuffle, choice
 import math
 import csv
 from collections import deque
@@ -239,9 +239,10 @@ def generate_random_dag(**kwargs):
     non_critical_list = [i for i in range(node_num) if i not in dag.critical_path]
     shuffle(critical_list)
     shuffle(non_critical_list)
-
     for i in range(node_num):
         dag.node_set[(non_critical_list + critical_list)[i]].exec_t = exec_t_arr[i]
+
+    dag.sl_node_idx = choice(non_critical_list)
 
     # sort index
     for node in dag.node_set:
@@ -250,7 +251,6 @@ def generate_random_dag(**kwargs):
 
     # calculate est (earliest start time)
     while Q:
-        print(Q)
         node_idx = Q.popleft()
         node = dag.node_set[node_idx]
         if len(node.pred) == 0:
