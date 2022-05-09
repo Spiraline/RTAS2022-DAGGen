@@ -41,6 +41,11 @@ if __name__ == '__main__':
 
     dag_idx = 0
 
+    classic_sum = 0
+    preemptive_sum = 0
+    only_preemptive_can_sched = 0
+    ratio = 0
+
     while dag_idx < dag_param["dag_num"]:
         ### Make DAG
         preemptive_dag = generate_random_dag(**dag_param)
@@ -74,10 +79,18 @@ if __name__ == '__main__':
 
         if not is_feasible:
             e_s_preempt = max(e_s_classic, 0)
-        
+
+        if e_s_classic > 0:
+            classic_sum += e_s_classic
+            preemptive_sum += e_s_preempt
+            ratio += e_s_preempt / e_s_classic
+        elif is_feasible:
+            only_preemptive_can_sched += 1
+
         print('[' + str(dag_idx) + ']', e_s_classic, e_s_preempt, feasible_pri)
         dag_idx += 1
 
+    print(ratio / dag_param["dag_num"], classic_sum / dag_param["dag_num"], preemptive_sum / dag_param["dag_num"], only_preemptive_can_sched)
 
     end_ts = datetime.now()
     print('[System] Execution time : %s' % str(end_ts - start_ts))
