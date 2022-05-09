@@ -103,7 +103,8 @@ def generate_random_dag(**kwargs):
     ### 1. Initialize node
     for i in range(node_num):
         node_param = {
-            "name" : "node" + str(i)
+            "name" : "node" + str(i),
+            "exec_t": randuniform(_exec_t)
         }
 
         dag.node_set.append(Node(**node_param))

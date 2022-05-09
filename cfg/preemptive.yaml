@@ -7,7 +7,7 @@ dag_num: 1
 instance_num: 1
 
 core_num: 4
-node_num: [40,10]
+node_num: [10,2]
 depth: [6.5,1.5]
 exec_t: [40,10]
 
