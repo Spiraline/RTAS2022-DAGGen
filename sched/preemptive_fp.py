@@ -13,7 +13,6 @@ def sched_preemptive_fp(node_set, core_num):
     is_complete = [False] * len(node_set)
     remain_exec = [node.exec_t for node in node_set]
     ts = 0
-    ts_diff = 0
 
     for node in node_set:
         if len(node.pred) == 0:
@@ -68,14 +67,17 @@ def sched_preemptive_fp(node_set, core_num):
             preemption_node = ready_queue.pop()
             ready_queue.appendleft(victim_node)
             dedicated_node[core_idx] = preemption_node.tid
+        
+        # No ready queue
+        if len([n for n in dedicated_node if n >= 0]) == 0:
+            break
 
-        # Update ts and
-        # If not, update ts
+        # Update ts and remaining execution time
         min_exec = min([remain_exec[node_idx]
                         for node_idx in dedicated_node if node_idx >= 0])
         for (core_idx, node_idx) in enumerate(dedicated_node):
             if node_idx >= 0:
-                remain_exec[node] -= min_exec
+                remain_exec[node_idx] -= min_exec
                 if len(time_table[core_idx]) > 0 and time_table[core_idx][-1][0] == node_idx:
                     time_table[core_idx][-1][2] += min_exec
                 else:
@@ -137,6 +139,6 @@ def calculate_acc(max_lc, sl_exp, std, acceptable):
 
 def check_deadline_miss(dag, core_num, lc, sl_unit, deadline):
     dag.node_set[dag.sl_node_idx].exec_t = lc * sl_unit
-    makespan = sched_fp(dag.node_set, core_num)
+    makespan = sched_preemptive_fp(dag.node_set, core_num)
 
     return makespan > deadline

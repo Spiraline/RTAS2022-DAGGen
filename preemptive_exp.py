@@ -1,11 +1,11 @@
 import argparse
-from sched.fp import sched_fp
 import yaml
 from datetime import datetime
 from os import makedirs
 from os.path import exists
 from model.preemptive_dag import generate_random_dag, assign_random_priority
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
+from sched.preemptive_fp import sched_preemptive_fp
 
 if __name__ == '__main__':
     start_ts = datetime.now()
@@ -52,6 +52,8 @@ if __name__ == '__main__':
         deadline = int((dag_param["exec_t"][0] * len(preemptive_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
         preemptive_dag.dict["deadline"] = deadline
 
+        print(preemptive_dag)
+
         ### Calculate preemptive Classic budget
         e_s_classic = preemptive_classic_budget(preemptive_dag, deadline, dag_param["core_num"])
         e_s_max = ideal_maximum_budget(preemptive_dag, deadline)
@@ -68,7 +70,7 @@ if __name__ == '__main__':
             for _ in range(1000): # Can parameterize
                 ### assign random priority and FP
                 p_list = assign_random_priority(preemptive_dag)
-                make_span = sched_fp(preemptive_dag.node_set, dag_param["core_num"])
+                make_span = sched_preemptive_fp(preemptive_dag.node_set, dag_param["core_num"])
                 if make_span <= deadline:
                     e_s_preempt = e_s
                     feasible_pri = p_list
