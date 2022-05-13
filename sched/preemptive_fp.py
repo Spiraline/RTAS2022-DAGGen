@@ -1,15 +1,19 @@
-from numpy.random import normal
 import math
+from collections import deque
+from numpy.random import normal
 
 # return value : makespan
 
 
 def sched_preemptive_fp(node_set, core_num):
-    ready_queue = []
+    ready_queue = deque()
+    # tid, start_ts, end_ts
     time_table = [[] for _ in range(core_num)]
-    is_core_idle = [True, ] * core_num
-    is_complete = [False, ] * len(node_set)
+    dedicated_node = [-1] * core_num
+    is_complete = [False] * len(node_set)
+    remain_exec = [node.exec_t for node in node_set]
     ts = 0
+    ts_diff = 0
 
     for node in node_set:
         if len(node.pred) == 0:
@@ -23,7 +27,7 @@ def sched_preemptive_fp(node_set, core_num):
             if len(core_table) > 0 and core_table[-1][2] <= ts and not is_complete[core_table[-1][0]]:
                 completed_node_idx = core_table[-1][0]
                 is_complete[completed_node_idx] = True
-                is_core_idle[idx] = True
+                dedicated_node[idx] = -1
 
                 # Add new ready node
                 succ_node_list = node_set[completed_node_idx].succ
@@ -47,19 +51,37 @@ def sched_preemptive_fp(node_set, core_num):
         # for core_table in time_table:
         #     print(core_table)
 
-        # If there is idle core, assign new node
-        for (idx, isIdle) in enumerate(is_core_idle):
-            if isIdle and len(ready_queue) > 0:
+        victim_cand = [(core_idx, node_set[node_idx]) for core_idx,
+                       node_idx in enumerate(dedicated_node) if node_idx >= 0]
+        victim_cand = sorted(victim_cand, key=lambda x: -x[1].priority)
+
+        # assign new node to idle core
+        for (core_idx, node_idx) in enumerate(dedicated_node):
+            if node_idx != 0 and len(ready_queue) > 0:
                 # get highest priority job
                 node = ready_queue.pop()
-                time_table[idx].append([node.tid, ts, ts + node.exec_t])
-                is_core_idle[idx] = False
+                dedicated_node[core_idx] = node.tid
 
+        # Preempt if lower priority node is executing
+        while len(ready_queue) > 0 and len(victim_cand) > 0 and ready_queue[0].priority > victim_cand[-1][1].priority:
+            core_idx, victim_node = victim_cand.pop()
+            preemption_node = ready_queue.pop()
+            ready_queue.appendleft(victim_node)
+            dedicated_node[core_idx] = preemption_node.tid
+
+        # Update ts and
         # If not, update ts
-        f_t = [core_table[-1][2]
-               for core_table in time_table if len(core_table) > 0 and core_table[-1][2] > ts]
-        if len(f_t) > 0:
-            ts = min(f_t)
+        min_exec = min([remain_exec[node_idx]
+                        for node_idx in dedicated_node if node_idx >= 0])
+        for (core_idx, node_idx) in enumerate(dedicated_node):
+            if node_idx >= 0:
+                remain_exec[node] -= min_exec
+                if len(time_table[core_idx]) > 0 and time_table[core_idx][-1][0] == node_idx:
+                    time_table[core_idx][-1][2] += min_exec
+                else:
+                    time_table[core_idx].append([node_idx, ts, ts + min_exec])
+
+        ts += min_exec
 
     makespan = 0
 
