@@ -353,4 +353,62 @@ def generate_backup_dag(dict, backup_ratio=0.5):
 
     backup_dag.dict["backup_exec_t"] = backup_exec_t
 
+    # Calculate est, lst
+    Q = deque()
+    rev_Q = deque()
+
+    for node_idx, node in enumerate(backup_dag.node_set):
+        if not node.pred:
+            Q.append(node_idx)
+        if not node.succ:
+            rev_Q.append(node_idx)
+
+    # calculate est (earliest start time)
+    while Q:
+        node_idx = Q.popleft()
+        node = backup_dag.node_set[node_idx]
+        if len(node.pred) == 0:
+            node.est = 0
+        else:
+            est = 0
+            for pred_idx in node.pred:
+                if backup_dag.node_set[pred_idx].est + backup_dag.node_set[pred_idx].exec_t > est:
+                    est = backup_dag.node_set[pred_idx].est + backup_dag.node_set[pred_idx].exec_t
+            node.est = est
+        
+        for succ_idx in node.succ:
+            if backup_dag.node_set[succ_idx].est >= 0:
+                continue
+            shouldAdd = True
+            for succ_pred_idx in backup_dag.node_set[succ_idx].pred:
+                if backup_dag.node_set[succ_pred_idx].est == -1:
+                    shouldAdd = False
+                    break
+            if shouldAdd:
+                Q.append(succ_idx)
+
+    # calculate ltc (least time to completion)
+    while rev_Q:
+        node_idx = rev_Q.popleft()
+        node = backup_dag.node_set[node_idx]
+        if len(node.succ) == 0:
+            node.ltc = 0
+        else:
+            ltc = 0
+            for succ_idx in node.succ:
+                if backup_dag.node_set[succ_idx].ltc + backup_dag.node_set[succ_idx].exec_t > ltc:
+                    ltc = backup_dag.node_set[succ_idx].ltc + backup_dag.node_set[succ_idx].exec_t
+            node.ltc = ltc
+        
+        for pred_idx in node.pred:
+            if backup_dag.node_set[pred_idx].ltc >= 0:
+                continue
+            shouldAdd = True
+            for pred_succ_idx in backup_dag.node_set[pred_idx].succ:
+                if backup_dag.node_set[pred_succ_idx].ltc == -1:
+                    shouldAdd = False
+                    break
+            if shouldAdd:
+                rev_Q.append(pred_idx)
+
     return backup_dag

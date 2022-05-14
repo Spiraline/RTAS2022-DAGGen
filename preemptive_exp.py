@@ -6,6 +6,7 @@ from datetime import datetime
 from os import makedirs
 from os.path import exists
 from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority
+from sched.classic_budget import classic_budget
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
 
@@ -102,9 +103,6 @@ def accuracy_exp(dag_param):
 
 def critical_failure_exp(dag_param, density):
     dag_idx = 0
-    unaccept = 0
-    deadline_miss = 0
-    both_fail = 0
 
     total_unaccept = [0, ] * (len(dag_param["base"]) + 1)
     total_deadline_miss = [0, ] * (len(dag_param["base"]) + 1)
@@ -159,10 +157,7 @@ def critical_failure_exp(dag_param, density):
         total_deadline_miss[lc_idx] /= dag_param["dag_num"]
         total_both[lc_idx] /= dag_param["dag_num"]
 
-    return total_unaccept, total_deadline_miss, total_both
-
-def original_calssic_error_ratio(dag_param):
-    pass
+    return total_unaccept, total_deadline_miss, total_both        
 
 if __name__ == '__main__':
     start_ts = datetime.now()
@@ -205,8 +200,6 @@ if __name__ == '__main__':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             dag_param["density"] = d / 100
             print(critical_failure_exp(dag_param, d))
-    elif config_dict["exp"] == "ori":
-        pass
     else:
         print('[System] Invalid exp type')
         exit(1)
