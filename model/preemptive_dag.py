@@ -233,6 +233,7 @@ def generate_random_dag(**kwargs):
     # dag.dict["isBackup"] = False
     dag.dict["node_num"] = node_num
     dag.dict["start_node_idx"] = dag.start_node_idx
+    dag.dict["dangling_idx"] = dag.dangling_idx
     dag.dict["sl_node_idx"] = dag.sl_node_idx
     dag.dict["exec_t"] = [node.exec_t for node in dag.node_set]
     adj_matrix = []
@@ -247,3 +248,109 @@ def generate_random_dag(**kwargs):
     dag.dict["adj_matrix"] = adj_matrix
 
     return dag
+
+def generate_from_dict(dict):
+    dag = DAG()
+    dag.dict = dict
+    node_num = dict["node_num"]
+
+    ### 1. Initialize node
+    for i in range(node_num):
+        node_param = {
+            "name" : "node" + str(i),
+            "exec_t" : dict["exec_t"][i]
+        }
+
+        dag.node_set.append(Node(**node_param))
+
+    dag.start_node_idx = dict["start_node_idx"]
+    dag.sl_node_idx = dict["sl_node_idx"]
+    dag.dangling_idx = dict["dangling_idx"]
+
+    for pred_idx in range(node_num):
+        for succ_idx in range(node_num):
+            if dict["adj_matrix"][pred_idx][succ_idx] == 1:
+                dag.node_set[pred_idx].succ.append(succ_idx)
+                dag.node_set[succ_idx].pred.append(pred_idx)
+
+    for node in dag.node_set:
+        if len(node.succ) == 0:
+            node.isLeaf = True
+
+    return dag
+
+def generate_backup_dag(dict, backup_ratio=0.5):
+    backup_dict = {}
+
+    dangling_idx = dict["dangling_idx"]
+
+    # last node is backup_node
+    node_list = [i for i in range(dict["node_num"]+1) if i not in dangling_idx]
+
+    # remove cycle node (dangling -> A -> dangling)
+    has_cycle = []
+    for node_idx in node_list[:-1]:
+        exist_outcoming = exist_incoming = False
+        for dang_idx in dangling_idx:
+            if dict["adj_matrix"][node_idx][dang_idx] == 1:
+                exist_outcoming = True
+            if dict["adj_matrix"][dang_idx][node_idx] == 1:
+                exist_incoming = True
+        
+        if exist_incoming and exist_outcoming:
+            has_cycle.append(node_idx)
+    
+    for node_idx in has_cycle:
+        node_list.remove(node_idx)
+
+    node_num = len(node_list)
+    backup_dict["node_num"] = node_num
+    backup_dict["start_node_idx"] = dict["start_node_idx"]
+    backup_dict["sl_node_idx"] = dict["sl_node_idx"]
+    backup_dict["dangling_idx"] = []
+
+    # Calculate backup node execution time
+    backup_exec_t = 0
+    if "backup_exec_t" in dict:
+        backup_exec_t = dict["backup_exec_t"]
+    else:
+        for idx in dangling_idx:
+            backup_exec_t += dict["exec_t"][idx]
+        backup_exec_t = round(backup_exec_t * backup_ratio)
+
+    exec_t_arr = []
+    for idx in node_list[:-1]:
+        exec_t_arr.append(dict["exec_t"][idx])
+    exec_t_arr.append(backup_exec_t)
+
+    backup_dict["exec_t"] = exec_t_arr
+
+    # Regenerate adj matrix
+    adj_matrix = []
+    for _ in range(node_num):
+        adj_matrix.append([0, ] * node_num)
+
+    for pred_idx in range(dict["node_num"]):
+        for succ_idx in range(dict["node_num"]):
+            if dict["adj_matrix"][pred_idx][succ_idx] == 1:
+                new_p_idx = pred_idx
+                new_c_idx = succ_idx
+                if pred_idx in dangling_idx:
+                    new_p_idx = dict["node_num"]
+                if succ_idx in dangling_idx:
+                    new_c_idx = dict["node_num"]
+                
+                if new_p_idx != new_c_idx and new_p_idx in node_list and new_c_idx in node_list:
+                    i = node_list.index(new_p_idx)
+                    j = node_list.index(new_c_idx)
+
+                    # check if there 
+                    adj_matrix[i][j] = 1
+    
+    backup_dict["adj_matrix"] = adj_matrix
+
+    backup_dag = generate_from_dict(backup_dict)
+
+    backup_dag.dict["backup_exec_t"] = backup_exec_t
+
+    return backup_dag
