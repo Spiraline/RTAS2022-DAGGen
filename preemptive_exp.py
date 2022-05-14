@@ -7,38 +7,7 @@ from model.preemptive_dag import generate_random_dag, assign_random_priority
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp
 
-if __name__ == '__main__':
-    start_ts = datetime.now()
-    parser = argparse.ArgumentParser(description='Preemptive Exp')
-    parser.add_argument('--config', '-c', type=str, help='config yaml file path', default='cfg.yaml')
-
-    args = parser.parse_args()
-
-    if not exists('cfg/' + args.config):
-        print('Should select appropriate config file in cfg directory')
-        exit(1)
-
-    makedirs("res", exist_ok=True)
-
-    with open('cfg/' + args.config, 'r') as f:
-        config_dict = yaml.load(f, Loader=yaml.FullLoader)
-
-    dag_param = {
-        "dag_num" : config_dict["dag_num"],
-        "instance_num" : config_dict["instance_num"],
-        "core_num" : config_dict["core_num"],
-        "node_num" : config_dict["node_num"],
-        "depth" : config_dict["depth"],
-        "exec_t" : config_dict["exec_t"],
-        "backup_ratio" : config_dict["backup_ratio"],
-        "sl_unit" : config_dict["sl_unit"],
-        "sl_exp" : config_dict["sl_exp"],
-        "acceptance" : config_dict["acceptance_threshold"],
-        "base" : config_dict["baseline"],
-        "density" : config_dict["density"],
-        "dangling" : config_dict["dangling_ratio"]
-    }
-
+def random_priority_LS(dag_param):
     dag_idx = 0
 
     classic_sum = 0
@@ -51,8 +20,6 @@ if __name__ == '__main__':
         preemptive_dag = generate_random_dag(**dag_param)
         deadline = int((dag_param["exec_t"][0] * len(preemptive_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
         preemptive_dag.dict["deadline"] = deadline
-
-        print(preemptive_dag)
 
         ### Calculate preemptive Classic budget
         e_s_classic = preemptive_classic_budget(preemptive_dag, deadline, dag_param["core_num"])
@@ -92,7 +59,60 @@ if __name__ == '__main__':
         print('[' + str(dag_idx) + ']', e_s_classic, e_s_preempt, feasible_pri)
         dag_idx += 1
 
-    print(ratio / dag_param["dag_num"], classic_sum / dag_param["dag_num"], preemptive_sum / dag_param["dag_num"], only_preemptive_can_sched)
+    return ratio / dag_param["dag_num"], classic_sum / dag_param["dag_num"], preemptive_sum / dag_param["dag_num"], only_preemptive_can_sched
+
+def accuracy_exp(dag_param):
+    pass
+
+def critical_failure_exp(dag_param):
+    pass
+
+def original_calssic_error_ratio(dag_param):
+    pass
+
+if __name__ == '__main__':
+    start_ts = datetime.now()
+    parser = argparse.ArgumentParser(description='Preemptive Exp')
+    parser.add_argument('--config', '-c', type=str, help='config yaml file path', default='cfg.yaml')
+
+    args = parser.parse_args()
+
+    if not exists('cfg/' + args.config):
+        print('Should select appropriate config file in cfg directory')
+        exit(1)
+
+    makedirs("res", exist_ok=True)
+
+    with open('cfg/' + args.config, 'r') as f:
+        config_dict = yaml.load(f, Loader=yaml.FullLoader)
+
+    dag_param = {
+        "dag_num" : config_dict["dag_num"],
+        "instance_num" : config_dict["instance_num"],
+        "core_num" : config_dict["core_num"],
+        "node_num" : config_dict["node_num"],
+        "depth" : config_dict["depth"],
+        "exec_t" : config_dict["exec_t"],
+        "backup_ratio" : config_dict["backup_ratio"],
+        "sl_unit" : config_dict["sl_unit"],
+        "sl_exp" : config_dict["sl_exp"],
+        "acceptance" : config_dict["acceptance_threshold"],
+        "base" : config_dict["baseline"],
+        "density" : config_dict["density"],
+        "dangling" : config_dict["dangling_ratio"]
+    }
+
+    if config_dict["exp"] == "random_pri":
+        print(random_priority_LS(dag_param))
+    elif config_dict["exp"] == "acc":
+        pass
+    elif config_dict["exp"] == "fail":
+        pass
+    elif config_dict["exp"] == "ori":
+        pass
+    else:
+        print('[System] Invalid exp type')
+        exit(1)
 
     end_ts = datetime.now()
     print('[System] Execution time : %s' % str(end_ts - start_ts))
