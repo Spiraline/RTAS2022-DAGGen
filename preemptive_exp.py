@@ -7,11 +7,10 @@ from os import makedirs
 from os.path import exists
 from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
-from sched.preemptive_fp import sched_preemptive_fp, calculate_acc
+from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
 
 def random_priority_LS(dag_param):
     dag_idx = 0
-
     classic_sum = 0
     preemptive_sum = 0
     only_preemptive_can_sched = 0
@@ -101,8 +100,66 @@ def accuracy_exp(dag_param):
 
         dag_idx += 1
 
-def critical_failure_exp(dag_param):
-    pass
+def critical_failure_exp(dag_param, density):
+    dag_idx = 0
+    unaccept = 0
+    deadline_miss = 0
+    both_fail = 0
+
+    total_unaccept = [0, ] * (len(dag_param["base"]) + 1)
+    total_deadline_miss = [0, ] * (len(dag_param["base"]) + 1)
+    total_both = [0, ] * (len(dag_param["base"]) + 1)
+
+    while dag_idx < dag_param["dag_num"]:
+        ### Make DAG
+        normal_dag = generate_random_dag(**dag_param)
+        assign_random_priority(normal_dag)
+        backup_dag = generate_backup_dag(normal_dag.dict, dag_param["backup_ratio"])
+        deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
+        normal_dag.dict["deadline"] = deadline
+        backup_dag.dict["deadline"] = deadline
+
+        ### TODO: how about priority?
+
+        ### Calculate preemptive Classic budget
+        normal_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        backup_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+
+        lc = math.floor(min(normal_budget, backup_budget) / dag_param["sl_unit"])
+
+        if lc <= 0:
+            # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+            continue
+
+        lc_list = dag_param["base"] + [lc]
+
+        for (lc_idx, max_lc) in enumerate(lc_list):
+            unac_one_dag = 0
+            miss_one_dag = 0
+            both_one_dag = 0
+            for _ in range(dag_param["instance_num"]):
+                isUnacceptable, lc = check_acceptance(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
+                isMiss = check_deadline_miss(normal_dag, dag_param["core_num"], lc, dag_param["sl_unit"], deadline) or check_deadline_miss(backup_dag, dag_param["core_num"], lc, dag_param["sl_unit"], deadline)
+
+                if isUnacceptable and isMiss:
+                    both_one_dag += 1
+                elif isUnacceptable and not isMiss:
+                    unac_one_dag += 1
+                elif not isUnacceptable and isMiss:
+                    miss_one_dag += 1
+            
+            total_unaccept[lc_idx] += unac_one_dag / dag_param["instance_num"]
+            total_deadline_miss[lc_idx] += miss_one_dag / dag_param["instance_num"]
+            total_both[lc_idx] += both_one_dag / dag_param["instance_num"]
+
+        dag_idx += 1
+
+    for lc_idx in range(len(lc_list)):
+        total_unaccept[lc_idx] /= dag_param["dag_num"]
+        total_deadline_miss[lc_idx] /= dag_param["dag_num"]
+        total_both[lc_idx] /= dag_param["dag_num"]
+
+    return total_unaccept, total_deadline_miss, total_both
 
 def original_calssic_error_ratio(dag_param):
     pass
@@ -145,7 +202,9 @@ if __name__ == '__main__':
     elif config_dict["exp"] == "acc":
         accuracy_exp(dag_param)
     elif config_dict["exp"] == "fail":
-        pass
+        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+            dag_param["density"] = d / 100
+            print(critical_failure_exp(dag_param, d))
     elif config_dict["exp"] == "ori":
         pass
     else:
