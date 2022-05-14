@@ -145,9 +145,6 @@ def generate_random_dag(**kwargs):
         dag.node_set[node_idx].isLeaf = True
         rev_Q.append(node_idx)
 
-    # Assign self-looping node
-    dag.sl_node_idx = randint(0, node_num-1)
-
     ### 4. Make arc
     # make arc from last level
     for level in range(depth-1, 0, -1):
@@ -165,31 +162,24 @@ def generate_random_dag(**kwargs):
                 dag.node_set[node_idx].succ.append(succ_idx)
                 dag.node_set[succ_idx].pred.append(node_idx)
 
-    # make extra arc (disabled since unnecessary)
-    '''
-    for i in range(extra_arc_num):
-        arc_added_flag = False
-        failCnt = 0
-        while not arc_added_flag and failCnt < 10:
-            node1_idx = randint(0, node_num-2)
-            node2_idx = randint(0, node_num-2)
-
-            if dag.node_set[node1_idx].level < dag.node_set[node2_idx].level and node2_idx not in dag.node_set[node1_idx].succ:
-                dag.node_set[node1_idx].succ.append(node2_idx)
-                dag.node_set[node2_idx].pred.append(node1_idx)
-                arc_added_flag = True
-            elif dag.node_set[node1_idx].level > dag.node_set[node2_idx].level and node1_idx not in dag.node_set[node2_idx].succ:
-                dag.node_set[node2_idx].succ.append(node1_idx)
-                dag.node_set[node1_idx].pred.append(node2_idx)
-                arc_added_flag = True
-            else:
-                failCnt += 1
-    '''
-
     # sort index
     for node in dag.node_set:
         node.succ.sort()
         node.pred.sort()
+
+    # Assign self-looping node and dangling nodes
+    dag.sl_node_idx = randint(0, node_num-1)
+    dangling_node_num = round(node_num * _dangling_node_ratio)
+    dan_Q = deque([dag.sl_node_idx])
+    while dan_Q and len(dag.dangling_idx) < dangling_node_num:
+        node_idx = dan_Q.popleft()
+        if dag.node_set[node_idx].isLeaf:
+            break
+        else:
+            for succ_idx in dag.node_set[node_idx].succ:
+                if succ_idx not in dag.dangling_idx:
+                    dag.dangling_idx.append(succ_idx)
+                    dan_Q.append(succ_idx)
 
     # calculate est (earliest start time)
     while Q:
