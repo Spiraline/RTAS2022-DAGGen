@@ -1,11 +1,13 @@
 import argparse
 import yaml
+import math
+import csv
 from datetime import datetime
 from os import makedirs
 from os.path import exists
-from model.preemptive_dag import generate_random_dag, assign_random_priority
+from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
-from sched.preemptive_fp import sched_preemptive_fp
+from sched.preemptive_fp import sched_preemptive_fp, calculate_acc
 
 def random_priority_LS(dag_param):
     dag_idx = 0
@@ -62,7 +64,42 @@ def random_priority_LS(dag_param):
     return ratio / dag_param["dag_num"], classic_sum / dag_param["dag_num"], preemptive_sum / dag_param["dag_num"], only_preemptive_can_sched
 
 def accuracy_exp(dag_param):
-    pass
+    dag_idx = 0
+
+    while dag_idx < dag_param["dag_num"]:
+        ### Make DAG
+        normal_dag = generate_random_dag(**dag_param)
+        assign_random_priority(normal_dag)
+        backup_dag = generate_backup_dag(normal_dag.dict, dag_param["backup_ratio"])
+        deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
+        normal_dag.dict["deadline"] = deadline
+        backup_dag.dict["deadline"] = deadline
+
+        ### TODO: how about priority?
+
+        ### Calculate preemptive Classic budget
+        normal_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        backup_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+
+        lc = math.floor(min(normal_budget, backup_budget) / dag_param["sl_unit"])
+
+        if lc <= 0:
+            print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+            continue
+
+        lc_list = dag_param["base"] + [lc]
+
+        with open('res/acc.csv', 'w', newline='') as f:
+            wr = csv.writer(f)
+            wr.writerow(['Base Small', 'Base Large', 'Ours Classic', 'Ours CPC'])
+            for _ in range(dag_param["instance_num"]):
+                acc_list = []
+                for (lc_idx, max_lc) in enumerate(lc_list):
+                    acc = calculate_acc(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
+                    acc_list.append(acc)
+                wr.writerow[acc_list]
+
+        dag_idx += 1
 
 def critical_failure_exp(dag_param):
     pass
@@ -96,16 +133,17 @@ if __name__ == '__main__':
         "backup_ratio" : config_dict["backup_ratio"],
         "sl_unit" : config_dict["sl_unit"],
         "sl_exp" : config_dict["sl_exp"],
+        "sl_std" : config_dict["sl_std"],
         "acceptance" : config_dict["acceptance_threshold"],
         "base" : config_dict["baseline"],
         "density" : config_dict["density"],
-        "dangling" : config_dict["dangling_ratio"]
+        "dangling_node_ratio" : config_dict["dangling_ratio"]
     }
 
     if config_dict["exp"] == "random_pri":
         print(random_priority_LS(dag_param))
     elif config_dict["exp"] == "acc":
-        pass
+        accuracy_exp(dag_param)
     elif config_dict["exp"] == "fail":
         pass
     elif config_dict["exp"] == "ori":
