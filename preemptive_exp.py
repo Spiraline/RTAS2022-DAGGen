@@ -202,7 +202,15 @@ if __name__ == '__main__':
     elif config_dict["exp"] == "fail":
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             dag_param["density"] = d / 100
-            print(critical_failure_exp(dag_param, d))
+            file_name = 'res/density_' + str(d) + '.csv'
+            un, dm, both = critical_failure_exp(dag_param, d)
+            with open(file_name, 'w', newline='') as f:
+                wr = csv.writer(f)
+                wr.writerow(['Failure Type', 'Base Small', 'Base Large', 'Preemptive Classic'])
+                wr.writerow(['Unacceptable Result'] + un)
+                wr.writerow(['Deadline Miss'] + dm)
+                wr.writerow(['Both'] + both)
+            
     else:
         print('[System] Invalid exp type')
         exit(1)
