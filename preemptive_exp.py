@@ -66,6 +66,10 @@ def random_priority_LS(dag_param):
 def accuracy_exp(dag_param):
     dag_idx = 0
 
+    f = open('res/acc.csv', 'w', newline='')
+    wr = csv.writer(f)
+    wr.writerow(['Base Small', 'Base Large', 'Preemptive Classic'])
+
     while dag_idx < dag_param["dag_num"]:
         ### Make DAG
         normal_dag = generate_random_dag(**dag_param)
@@ -89,17 +93,16 @@ def accuracy_exp(dag_param):
 
         lc_list = dag_param["base"] + [lc]
 
-        with open('res/acc.csv', 'w', newline='') as f:
-            wr = csv.writer(f)
-            wr.writerow(['Base Small', 'Base Large', 'Ours Classic', 'Ours CPC'])
-            for _ in range(dag_param["instance_num"]):
-                acc_list = []
-                for (lc_idx, max_lc) in enumerate(lc_list):
-                    acc = calculate_acc(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
-                    acc_list.append(acc)
-                wr.writerow[acc_list]
+        for _ in range(dag_param["instance_num"]):
+            acc_list = []
+            for (lc_idx, max_lc) in enumerate(lc_list):
+                acc = calculate_acc(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
+                acc_list.append(acc)
+        wr.writerow(acc_list)
 
         dag_idx += 1
+    
+    f.close()
 
 def critical_failure_exp(dag_param, density):
     dag_idx = 0
