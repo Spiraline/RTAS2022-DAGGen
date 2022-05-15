@@ -242,8 +242,6 @@ def generate_random_dag(**kwargs):
     for i in range(node_num):
         dag.node_set[(non_critical_list + critical_list)[i]].exec_t = exec_t_arr[i]
 
-    dag.sl_node_idx = choice(non_critical_list)
-
     # sort index
     for node in dag.node_set:
         node.succ.sort()

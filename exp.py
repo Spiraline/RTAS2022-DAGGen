@@ -7,6 +7,59 @@ from sched.classic_budget import classic_budget
 from sched.cpc_budget import cpc_budget
 import csv
 
+def original_error_ratio(**kwargs):
+    dag_num = kwargs.get('dag_num', 100)
+    instance_num = kwargs.get('instance_num', 100)
+    core_num = kwargs.get('core_num', 4)
+    node_num = kwargs.get('node_num', [40,10])
+    depth = kwargs.get('depth', [6.5,1.5])
+    backup_ratio = kwargs.get('backup_ratio', 0.5)
+    exec_t = kwargs.get('exec_t', [40,10])
+    sl_unit = kwargs.get('sl_unit', 5.0)
+    sl_exp = kwargs.get('sl_exp', 30)
+    sl_std = kwargs.get('sl_std', 1.0)
+    A_acc = kwargs.get('A_acc', 0.95)
+    base_loop_count = kwargs.get('base', [100, 200])
+    density = kwargs.get('density', 0.6)
+    extra_arc_ratio = kwargs.get('extra_arc_ratio', 0.1)
+    dangling_ratio = kwargs.get('dangling_ratio', 0.2)
+
+    dag_param = {
+        "node_num": node_num,
+        "depth": depth,
+        "exec_t": exec_t,
+        "start_node": [1, 0],
+        "end_node": [1, 0],
+        "extra_arc_ratio" : extra_arc_ratio,
+        "dangling_node_ratio" : dangling_ratio
+    }
+
+    dag_idx = 0
+    
+    error_dag = 0
+
+    while dag_idx < dag_num:
+        ### Make DAG and backup DAG
+        normal_dag = generate_random_dag(**dag_param)
+
+        ### Make CPC model and assign priority
+        normal_cpc = construct_cpc(normal_dag)
+        assign_priority(normal_cpc)
+
+        ### Budget analysis
+        deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
+        normal_dag.dict["deadline"] = deadline
+
+        normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
+        normal_pr_classic_budget = preemptive_classic_budget(normal_cpc, deadline, core_num)
+
+        if normal_classic_budget != normal_pr_classic_budget:
+            error_dag += 1
+
+        dag_idx += 1
+    
+    return error_dag / dag_num
+
 def budget_compare(**kwargs):
     dag_num = kwargs.get('dag_num', 100)
     instance_num = kwargs.get('instance_num', 100)
@@ -51,14 +104,13 @@ def budget_compare(**kwargs):
         deadline = int((exec_t[0] * len(normal_dag.node_set)) / (core_num * density))
         normal_dag.dict["deadline"] = deadline
 
-        normal_dag.node_set[normal_dag.sl_node_idx].exec_t = sl_unit
-
         normal_classic_budget = classic_budget(normal_cpc, deadline, core_num)
         normal_pr_classic_budget = preemptive_classic_budget(normal_cpc, deadline, core_num)       
         normal_cpc_budget = cpc_budget(normal_cpc, deadline, core_num, sl_unit)
 
         if normal_classic_budget <= 0 or normal_pr_classic_budget <= 0 or normal_cpc_budget <= 0:
-            continue
+            # continue
+            break
 
         pr_cl_ratio += normal_pr_classic_budget / normal_classic_budget
         cpc_ratio += normal_cpc_budget / normal_classic_budget

@@ -2,7 +2,7 @@ import argparse
 import os
 import csv
 import yaml
-from exp import acc_exp, budget_compare, debug, syn_exp
+from exp import acc_exp, budget_compare, debug, original_error_ratio, syn_exp
 from datetime import datetime
 from os import makedirs
 from os.path import exists
@@ -35,12 +35,19 @@ if __name__ == '__main__':
         "sl_exp" : config_dict["sl_exp"],
         "acceptance" : config_dict["acceptance_threshold"],
         "base" : config_dict["baseline"],
+        "density" : config_dict["density"],
         "dangling" : config_dict["dangling_ratio"]
     }
 
     if config_dict["exp"] == 'budget':
         pr_cl, cpc = budget_compare(**exp_param)
         print(pr_cl, cpc)
+    elif config_dict["exp"] == 'error':
+        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+            d_f = round(d / 100, 2)
+            exp_param["density"] = d_f
+            error_ratio = original_error_ratio(**exp_param)
+            print(d_f, error_ratio)
     elif config_dict["exp"] == 'density':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)
