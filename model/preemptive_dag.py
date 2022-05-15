@@ -1,6 +1,4 @@
-from random import randint, shuffle, choice
-import math
-import csv
+from random import randint, shuffle
 from collections import deque
 
 if __name__ == "__main__":
@@ -28,58 +26,20 @@ def argmax(value_list, index_list=None):
             max_value = value_list[i]
     return max_index
 
-def calculate_critical_path(dag):
-    ready_queue = []
-    is_complete = [False, ] * len(dag.node_set)
-    longest = {}
-    max_len = {}
-
-    for node in dag.node_set:
-        if len(node.pred) == 0:
-            is_complete[node.tid] = True
-            longest[node.tid] = [node.tid]
-            max_len[node.tid] = node.exec_t
-
-            for succ_idx in node.succ:
-                if is_complete[succ_idx]:
-                    isReady = False
-                else:
-                    isReady = True
-                for pred_idx in dag.node_set[succ_idx].pred:
-                    if not is_complete[pred_idx]:
-                        isReady = False
-            
-                if isReady:
-                    ready_queue.append(dag.node_set[succ_idx])
+def get_critical_path(dag, node_idx):
+    path = deque([node_idx])
     
-    while False in is_complete:
-        node = ready_queue.pop()
-        longest_idx = node.pred[0]
-        longest_len = max_len[node.pred[0]]
-        for pred_idx in node.pred[1:]:
-            if longest_len < max_len[pred_idx]:
-                longest_idx = pred_idx
-                longest_len = max_len[pred_idx]
-        
-        longest[node.tid] = longest[longest_idx] + [node.tid]
-        max_len[node.tid] = max_len[longest_idx] + node.exec_t
-
-        is_complete[node.tid] = True
-
-        for succ_idx in node.succ:
-            if is_complete[succ_idx]:
-                isReady = False
-            else:
-                isReady = True
-            for pred_idx in dag.node_set[succ_idx].pred:
-                if not is_complete[pred_idx]:
-                    isReady = False
-        
-            if isReady:
-                ready_queue.append(dag.node_set[succ_idx])
-
-    longest_idx = argmax(max_len)
-    return longest[longest_idx]
+    tmp_idx = node_idx
+    while dag.node_set[tmp_idx].est_node != -1:
+        path.appendleft(dag.node_set[tmp_idx].est_node)
+        tmp_idx = dag.node_set[tmp_idx].est_node
+    
+    tmp_idx = node_idx
+    while dag.node_set[tmp_idx].ltc_node != -1:
+        path.append(dag.node_set[tmp_idx].ltc_node)
+        tmp_idx = dag.node_set[tmp_idx].ltc_node
+    
+    return list(path)
 
 def assign_random_priority(dag):
     priority = [i for i in range(len(dag.node_set))]
@@ -192,6 +152,7 @@ def generate_random_dag(**kwargs):
             for pred_idx in node.pred:
                 if dag.node_set[pred_idx].est + dag.node_set[pred_idx].exec_t > est:
                     est = dag.node_set[pred_idx].est + dag.node_set[pred_idx].exec_t
+                    node.est_node = pred_idx
             node.est = est
         
         for succ_idx in node.succ:
@@ -216,6 +177,7 @@ def generate_random_dag(**kwargs):
             for succ_idx in node.succ:
                 if dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t > ltc:
                     ltc = dag.node_set[succ_idx].ltc + dag.node_set[succ_idx].exec_t
+                    node.ltc_node = succ_idx
             node.ltc = ltc
         
         for pred_idx in node.pred:

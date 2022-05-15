@@ -14,6 +14,8 @@ class Node(object):
 
         self.est = -1
         self.ltc = -1
+        self.est_node = -1
+        self.ltc_node = -1
 
         # Assigned after CPCGen
         self.priority = -1                          # v_j's priority

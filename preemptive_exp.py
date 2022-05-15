@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from os import makedirs
 from os.path import exists
-from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority
+from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path
 from sched.classic_budget import classic_budget
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
@@ -104,7 +104,7 @@ def accuracy_exp(dag_param):
     
     f.close()
 
-def critical_failure_exp(dag_param, density):
+def critical_failure_exp(dag_param):
     dag_idx = 0
 
     total_unaccept = [0, ] * (len(dag_param["base"]) + 1)
@@ -160,7 +160,28 @@ def critical_failure_exp(dag_param, density):
         total_deadline_miss[lc_idx] /= dag_param["dag_num"]
         total_both[lc_idx] /= dag_param["dag_num"]
 
-    return total_unaccept, total_deadline_miss, total_both        
+    return total_unaccept, total_deadline_miss, total_both
+
+def original_classic_failure(dag_param):
+    dag_idx = 0
+
+    diff_num = 0
+
+    while dag_idx < dag_param["dag_num"]:
+        ### Make DAG
+        normal_dag = generate_random_dag(**dag_param)
+        normal_dag.critical_path = get_critical_path(normal_dag, normal_dag.sl_node_idx)
+        deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
+        normal_dag.dict["deadline"] = deadline
+
+        ori_budget = classic_budget(normal_dag, deadline, dag_param["core_num"])
+        new_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        if ori_budget != new_budget:
+            diff_num += 1
+
+        dag_idx += 1
+    
+    return diff_num / dag_param["dag_num"]
 
 if __name__ == '__main__':
     start_ts = datetime.now()
@@ -210,7 +231,10 @@ if __name__ == '__main__':
                 wr.writerow(['Unacceptable Result'] + un)
                 wr.writerow(['Deadline Miss'] + dm)
                 wr.writerow(['Both'] + both)
-            
+    elif config_dict["exp"] == "error":
+        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+            dag_param["density"] = d / 100
+            print(d, original_classic_failure(dag_param))
     else:
         print('[System] Invalid exp type')
         exit(1)

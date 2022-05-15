@@ -42,12 +42,6 @@ if __name__ == '__main__':
     if config_dict["exp"] == 'budget':
         pr_cl, cpc = budget_compare(**exp_param)
         print(pr_cl, cpc)
-    elif config_dict["exp"] == 'error':
-        for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
-            d_f = round(d / 100, 2)
-            exp_param["density"] = d_f
-            error_ratio = original_error_ratio(**exp_param)
-            print(d_f, error_ratio)
     elif config_dict["exp"] == 'density':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             d_f = round(d / 100, 2)
