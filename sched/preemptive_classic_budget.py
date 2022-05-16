@@ -10,6 +10,8 @@ def preemptive_classic_budget(dag, D, M):
     # critical node case
     if L_G == L_v_s:
         return dag.node_set[dag.sl_node_idx].exec_t + slack
+    elif delta >= M * slack:
+        return dag.node_set[dag.sl_node_idx].exec_t + M * slack
     else:
         return dag.node_set[dag.sl_node_idx].exec_t + delta + slack - delta / M
 
