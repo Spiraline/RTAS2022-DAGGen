@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from os import makedirs
 from os.path import exists
-from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path
+from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path, import_dag_file, generate_from_dict
 from sched.classic_budget import classic_budget
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
@@ -236,6 +236,16 @@ if __name__ == '__main__':
             dag_param["density"] = d / 100
             print(d, original_classic_failure(dag_param))
     else:
+        # For debugging Autoware DAG
+        # dict_from_file = import_dag_file('custom_dag/classic_fail.dag')
+        # normal_dag = generate_from_dict(dict_from_file)
+        # print(normal_dag)
+
+        # ori_budget = classic_budget(normal_dag, 20, 3)
+        # new_budget = preemptive_classic_budget(normal_dag, 20, 3)
+
+        # print(ori_budget, new_budget)
+        
         print('[System] Invalid exp type')
         exit(1)
 
