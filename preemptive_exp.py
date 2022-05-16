@@ -176,6 +176,10 @@ def original_classic_failure(dag_param):
 
         ori_budget = classic_budget(normal_dag, deadline, dag_param["core_num"])
         new_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+
+        if ori_budget <= 0 or new_budget <= 0:
+            continue
+
         if ori_budget != new_budget:
             diff_num += 1
 
