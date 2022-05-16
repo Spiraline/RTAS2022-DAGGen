@@ -236,9 +236,12 @@ if __name__ == '__main__':
                 wr.writerow(['Deadline Miss'] + dm)
                 wr.writerow(['Both'] + both)
     elif config_dict["exp"] == "error":
+        f = open('res/error_ratio.csv', 'w')
+        wr = csv.writer(f)
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
-            dag_param["density"] = d / 100
-            print(d, original_classic_failure(dag_param))
+            dag_param["density"] = round(d / 100, 2)
+            wr.writerow([dag_param["density"], original_classic_failure(dag_param)])
+        f.close()
     else:
         # For debugging Autoware DAG
         # dict_from_file = import_dag_file('custom_dag/classic_fail.dag')
