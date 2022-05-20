@@ -68,30 +68,43 @@ def accuracy_exp(dag_param):
 
     f = open('res/acc.csv', 'w', newline='')
     wr = csv.writer(f)
-    wr.writerow(['Base Small', 'Base Large', 'Preemptive Classic'])
+    wr.writerow(['Base Small', 'Base Large', 'Original Classic', 'Preemptive Classic'])
+
+    normal_dag = generate_random_dag(**dag_param)
+    normal_dag.critical_path = get_critical_path(normal_dag, normal_dag.sl_node_idx)
+    deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
+    normal_dag.dict["deadline"] = deadline
 
     while dag_idx < dag_param["dag_num"]:
         ### Make DAG
         normal_dag = generate_random_dag(**dag_param)
+        normal_dag.critical_path = get_critical_path(normal_dag, normal_dag.sl_node_idx)
+        normal_dag.dict["critical_path"] = normal_dag.critical_path
         assign_random_priority(normal_dag)
         backup_dag = generate_backup_dag(normal_dag.dict, dag_param["backup_ratio"])
+        backup_dag.critical_path = get_critical_path(backup_dag, backup_dag.sl_node_idx)
         deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
         normal_dag.dict["deadline"] = deadline
         backup_dag.dict["deadline"] = deadline
 
         ### TODO: how about priority?
 
+        ### Calculate original Classic budget
+        ori_normal = classic_budget(normal_dag, deadline, dag_param["core_num"])
+        ori_backup = classic_budget(backup_dag, deadline, dag_param["core_num"])
+
         ### Calculate preemptive Classic budget
-        normal_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
-        backup_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        pre_normal = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        pre_backup = preemptive_classic_budget(backup_dag, deadline, dag_param["core_num"])
 
-        lc = math.floor(min(normal_budget, backup_budget) / dag_param["sl_unit"])
+        ori_lc = math.floor(min(ori_normal, ori_backup) / dag_param["sl_unit"])
+        pre_lc = math.floor(min(pre_normal, pre_backup) / dag_param["sl_unit"])
 
-        if lc <= 0:
-            print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
+        if ori_lc <= 0 or pre_lc <= 0:
+            # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
             continue
 
-        lc_list = dag_param["base"] + [lc]
+        lc_list = dag_param["base"] + [ori_lc, pre_lc]
 
         for _ in range(dag_param["instance_num"]):
             acc_list = []
@@ -107,32 +120,41 @@ def accuracy_exp(dag_param):
 def critical_failure_exp(dag_param):
     dag_idx = 0
 
-    total_unaccept = [0, ] * (len(dag_param["base"]) + 1)
-    total_deadline_miss = [0, ] * (len(dag_param["base"]) + 1)
-    total_both = [0, ] * (len(dag_param["base"]) + 1)
+    total_unaccept = [0, ] * (len(dag_param["base"]) + 2)
+    total_deadline_miss = [0, ] * (len(dag_param["base"]) + 2)
+    total_both = [0, ] * (len(dag_param["base"]) + 2)
 
     while dag_idx < dag_param["dag_num"]:
         ### Make DAG
         normal_dag = generate_random_dag(**dag_param)
+        normal_dag.critical_path = get_critical_path(normal_dag, normal_dag.sl_node_idx)
+        normal_dag.dict["critical_path"] = normal_dag.critical_path
         assign_random_priority(normal_dag)
         backup_dag = generate_backup_dag(normal_dag.dict, dag_param["backup_ratio"])
+        backup_dag.critical_path = get_critical_path(backup_dag, backup_dag.sl_node_idx)
         deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
         normal_dag.dict["deadline"] = deadline
         backup_dag.dict["deadline"] = deadline
 
-        ### TODO: how about priority?
+        ### Calculate original Classic budget
+        ori_normal = classic_budget(normal_dag, deadline, dag_param["core_num"])
+        ori_backup = classic_budget(backup_dag, deadline, dag_param["core_num"])
 
         ### Calculate preemptive Classic budget
-        normal_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
-        backup_budget = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        pre_normal = preemptive_classic_budget(normal_dag, deadline, dag_param["core_num"])
+        pre_backup = preemptive_classic_budget(backup_dag, deadline, dag_param["core_num"])
 
-        lc = math.floor(min(normal_budget, backup_budget) / dag_param["sl_unit"])
+        ori_lc = math.floor(min(ori_normal, ori_backup) / dag_param["sl_unit"])
+        pre_lc = math.floor(min(pre_normal, pre_backup) / dag_param["sl_unit"])
 
-        if lc <= 0:
+        ori_lc = math.floor(min(ori_normal, ori_backup) / dag_param["sl_unit"])
+        pre_lc = math.floor(min(pre_normal, pre_backup) / dag_param["sl_unit"])
+
+        if ori_lc <= 0 or pre_lc <= 0:
             # print('[' + str(dag_idx) + ']', 'infeasible DAG, retry')
             continue
 
-        lc_list = dag_param["base"] + [lc]
+        lc_list = dag_param["base"] + [ori_lc, pre_lc]
 
         for (lc_idx, max_lc) in enumerate(lc_list):
             unac_one_dag = 0
@@ -228,10 +250,10 @@ if __name__ == '__main__':
         for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
             dag_param["density"] = d / 100
             file_name = 'res/density_' + str(d) + '.csv'
-            un, dm, both = critical_failure_exp(dag_param, d)
+            un, dm, both = critical_failure_exp(dag_param)
             with open(file_name, 'w', newline='') as f:
                 wr = csv.writer(f)
-                wr.writerow(['Failure Type', 'Base Small', 'Base Large', 'Preemptive Classic'])
+                wr.writerow(['Failure Type', 'Base Small', 'Base Large', 'Original Classic', 'Preemptive Classic'])
                 wr.writerow(['Unacceptable Result'] + un)
                 wr.writerow(['Deadline Miss'] + dm)
                 wr.writerow(['Both'] + both)

@@ -1,15 +1,15 @@
-exp: error
+exp: fail
 dag_file: 
-density_range: [50,91,5]
+density_range: [20,71,5]
 std_range: [6,15,2]
 
-dag_num: 1000
-instance_num: 1
+dag_num: 10
+instance_num: 10
 
 core_num: 4
 node_num: [40,10]
 depth: [6.5,1.5]
-exec_t: [90,80]
+exec_t: [40,10]
 
 backup_ratio: 0.2
 sl_unit: 8.0

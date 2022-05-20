@@ -380,6 +380,7 @@ def generate_backup_dag(dict, backup_ratio=0.5):
                     adj_matrix[i][j] = 1
     
     backup_dict["adj_matrix"] = adj_matrix
+    backup_dict["critical_path"] = []
 
     backup_dag = generate_from_dict(backup_dict)
 
