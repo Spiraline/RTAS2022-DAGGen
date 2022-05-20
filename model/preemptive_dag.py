@@ -301,6 +301,7 @@ def generate_multiple_SL_dag(**kwargs):
     # Assign self-looping nodes
     # TODO: how about dangling nodes?
     dag.sl_nodes = sample([i for i in range(node_num)], sl_node_num)
+    dag.sl_nodes.sort()
 
     # calculate est (earliest start time)
     while Q:

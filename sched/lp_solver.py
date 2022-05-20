@@ -54,7 +54,7 @@ def calculate_multiple_budget(dag, D, M):
     node_num = len(dag.node_set)
     sl_dict = {}
     for idx, sl_idx in enumerate(dag.sl_nodes):
-        sl_dict[sl_idx] = sl_num + idx
+        sl_dict[sl_idx] = node_num + idx
 
     ### var
     # est(v_i), c(v_s), W, L

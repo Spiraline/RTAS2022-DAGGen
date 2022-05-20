@@ -7,8 +7,8 @@ dag_num: 10
 instance_num: 10
 
 core_num: 4
-node_num: [40,10]
-depth: [6.5,1.5]
+node_num: [10,0]
+depth: [4.0,0.0]
 exec_t: [40,10]
 
 backup_ratio: 0.2
