@@ -6,6 +6,7 @@ from datetime import datetime
 from os import makedirs
 from os.path import exists
 from model.preemptive_dag import generate_multiple_SL_dag, generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path, import_dag_file, generate_from_dict
+from sched.lp_solver import calculate_multiple_budget
 from sched.classic_budget import classic_budget
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
@@ -214,6 +215,11 @@ def multiple_SL_exp(dag_param):
 
     while dag_idx < dag_param["dag_num"]:
         normal_dag = generate_multiple_SL_dag(**dag_param)
+        deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
+        normal_dag.dict["deadline"] = deadline
+
+        budget = calculate_multiple_budget(normal_dag, deadline, dag_param["core_num"])
+        print(budget)
         dag_idx += 1
 
 if __name__ == '__main__':
