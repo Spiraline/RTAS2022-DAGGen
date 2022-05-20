@@ -136,9 +136,7 @@ def calculate_acc(max_lc, sl_exp, std, acceptable):
 
     return max_tmp_acc
 
-
-def check_deadline_miss(dag, core_num, lc, sl_unit, deadline):
-    dag.node_set[dag.sl_node_idx].exec_t = lc * sl_unit
+def check_deadline_miss(dag, core_num, deadline):
     makespan = sched_preemptive_fp(dag.node_set, core_num)
 
     return makespan > deadline

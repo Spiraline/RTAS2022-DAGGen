@@ -163,7 +163,9 @@ def critical_failure_exp(dag_param):
             both_one_dag = 0
             for _ in range(dag_param["instance_num"]):
                 isUnacceptable, lc = check_acceptance(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
-                isMiss = check_deadline_miss(normal_dag, dag_param["core_num"], lc, dag_param["sl_unit"], deadline) or check_deadline_miss(backup_dag, dag_param["core_num"], lc, dag_param["sl_unit"], deadline)
+                normal_dag.node_set[normal_dag.sl_node_idx].exec_t = lc * dag_param["sl_unit"]
+                backup_dag.node_set[backup_dag.sl_node_idx].exec_t = lc * dag_param["sl_unit"]
+                isMiss = check_deadline_miss(normal_dag, dag_param["core_num"], deadline) or check_deadline_miss(backup_dag, dag_param["core_num"], deadline)
 
                 if isUnacceptable and isMiss:
                     both_one_dag += 1
@@ -213,14 +215,84 @@ def original_classic_failure(dag_param):
 def multiple_SL_exp(dag_param):
     dag_idx = 0
 
+    total_unaccept = [0, ] * (len(dag_param["base"]) + 1)
+    total_deadline_miss = [0, ] * (len(dag_param["base"]) + 1)
+    total_both = [0, ] * (len(dag_param["base"]) + 1)
+
+    base_list = dag_param["base"]
+
     while dag_idx < dag_param["dag_num"]:
+        # TODO: should we calculate backup DAG?
         normal_dag = generate_multiple_SL_dag(**dag_param)
         deadline = int((dag_param["exec_t"][0] * len(normal_dag.node_set)) / (dag_param["core_num"] * dag_param["density"]))
         normal_dag.dict["deadline"] = deadline
 
         budget = calculate_multiple_budget(normal_dag, deadline, dag_param["core_num"])
-        print(budget)
+        if len(budget) == 0:
+            ## Not feasible
+            continue
+
+        # Experiments for baseline
+        for lc_idx, base in enumerate(base_list):
+            unac_one_dag = 0
+            miss_one_dag = 0
+            both_one_dag = 0
+
+            for _ in range(dag_param["instance_num"]):
+                isUnacceptable = False
+                for node_idx in normal_dag.sl_nodes:
+                    un, lc = check_acceptance(base, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
+                    normal_dag.node_set[node_idx].exec_t = lc * dag_param["sl_unit"]
+                    if un:
+                        isUnacceptable = True
+                isMiss = check_deadline_miss(normal_dag, dag_param["core_num"], deadline)
+
+                if isUnacceptable and isMiss:
+                    both_one_dag += 1
+                elif isUnacceptable and not isMiss:
+                    unac_one_dag += 1
+                elif not isUnacceptable and isMiss:
+                    miss_one_dag += 1
+            
+            total_unaccept[lc_idx] += unac_one_dag / dag_param["instance_num"]
+            total_deadline_miss[lc_idx] += miss_one_dag / dag_param["instance_num"]
+            total_both[lc_idx] += both_one_dag / dag_param["instance_num"]
+
+        # Experiments for preemptive Classic
+        unac_one_dag = 0
+        miss_one_dag = 0
+        both_one_dag = 0
+        # classic_lc = math.floor(budget / dag_param["sl_unit"])
+        
+        for _ in range(dag_param["instance_num"]):
+            isUnacceptable = False
+            for sl_idx, node_idx in enumerate(normal_dag.sl_nodes):
+                max_lc = math.floor(budget[sl_idx] / dag_param["sl_unit"])
+                un, lc = check_acceptance(max_lc, dag_param["sl_exp"], dag_param["sl_std"], dag_param["acceptance"])
+                normal_dag.node_set[node_idx].exec_t = lc * dag_param["sl_unit"]
+                if un:
+                    isUnacceptable = True
+            isMiss = check_deadline_miss(normal_dag, dag_param["core_num"], deadline)
+
+            if isUnacceptable and isMiss:
+                both_one_dag += 1
+            elif isUnacceptable and not isMiss:
+                unac_one_dag += 1
+            elif not isUnacceptable and isMiss:
+                miss_one_dag += 1
+
+        total_unaccept[-1] += unac_one_dag / dag_param["instance_num"]
+        total_deadline_miss[-1] += miss_one_dag / dag_param["instance_num"]
+        total_both[-1] += both_one_dag / dag_param["instance_num"]
+
         dag_idx += 1
+
+    for lc_idx in range((len(dag_param["base"]) + 1)):
+        total_unaccept[lc_idx] /= dag_param["dag_num"]
+        total_deadline_miss[lc_idx] /= dag_param["dag_num"]
+        total_both[lc_idx] /= dag_param["dag_num"]
+    
+    return total_unaccept, total_deadline_miss, total_both
 
 if __name__ == '__main__':
     start_ts = datetime.now()
@@ -280,8 +352,16 @@ if __name__ == '__main__':
     elif config_dict["exp"] == "multi":
         for sl_node_num in range(2, 5):
             dag_param["sl_node_num"] = sl_node_num
-            multiple_SL_exp(dag_param)
-        pass
+            for d in range(config_dict["density_range"][0], config_dict["density_range"][1], config_dict["density_range"][2]):
+                dag_param["density"] = d / 100
+                file_name = 'res/multi_' + str(sl_node_num) + '_' + str(d) + '.csv'
+                un, dm, both = multiple_SL_exp(dag_param)
+                with open(file_name, 'w', newline='') as f:
+                    wr = csv.writer(f)
+                    wr.writerow(['Failure Type', 'Base Small', 'Base Large','Preemptive Classic'])
+                    wr.writerow(['Unacceptable Result'] + un)
+                    wr.writerow(['Deadline Miss'] + dm)
+                    wr.writerow(['Both'] + both)
     else:
         # For debugging Autoware DAG
         # dict_from_file = import_dag_file('custom_dag/classic_fail.dag')

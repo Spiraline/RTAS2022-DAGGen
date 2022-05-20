@@ -118,7 +118,7 @@ def calculate_multiple_budget(dag, D, M):
     if len(sol) == 0:
         return []
 
-    return sol[node_num:node_num + sl_num]
+    return [round(v) for v in sol[node_num:node_num+sl_num]]
         
 
 if __name__ == "__main__":
