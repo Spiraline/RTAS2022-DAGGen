@@ -5,7 +5,7 @@ import csv
 from datetime import datetime
 from os import makedirs
 from os.path import exists
-from model.preemptive_dag import generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path, import_dag_file, generate_from_dict
+from model.preemptive_dag import generate_multiple_SL_dag, generate_random_dag, generate_backup_dag, assign_random_priority, get_critical_path, import_dag_file, generate_from_dict
 from sched.classic_budget import classic_budget
 from sched.preemptive_classic_budget import ideal_maximum_budget, preemptive_classic_budget
 from sched.preemptive_fp import sched_preemptive_fp, calculate_acc, check_acceptance, check_deadline_miss
@@ -209,6 +209,13 @@ def original_classic_failure(dag_param):
     
     return diff_num / dag_param["dag_num"]
 
+def multiple_SL_exp(dag_param):
+    dag_idx = 0
+
+    while dag_idx < dag_param["dag_num"]:
+        normal_dag = generate_multiple_SL_dag(**dag_param)
+        dag_idx += 1
+
 if __name__ == '__main__':
     start_ts = datetime.now()
     parser = argparse.ArgumentParser(description='Preemptive Exp')
@@ -264,6 +271,11 @@ if __name__ == '__main__':
             dag_param["density"] = round(d / 100, 2)
             wr.writerow([dag_param["density"], original_classic_failure(dag_param)])
         f.close()
+    elif config_dict["exp"] == "multi":
+        for sl_node_num in range(2, 5):
+            dag_param["sl_node_num"] = sl_node_num
+            multiple_SL_exp(dag_param)
+        pass
     else:
         # For debugging Autoware DAG
         # dict_from_file = import_dag_file('custom_dag/classic_fail.dag')

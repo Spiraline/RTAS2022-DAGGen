@@ -1,4 +1,4 @@
-exp: fail
+exp: multi
 dag_file: 
 density_range: [20,71,5]
 std_range: [6,15,2]

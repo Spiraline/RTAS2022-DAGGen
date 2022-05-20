@@ -51,6 +51,9 @@ class DAG(object):
         # For saving dag info
         self.dict = {}
 
+        # for multiple SL
+        self.sl_nodes = []
+
     def __str__(self):
         print("%-9s %-3s %-5s %38s %40s %4s %40s %40s" % ('name', 'pri', 'exec_t', 'pred node', 'succ node', 'f_t', 'I', 'I_e'))
         for node in self.node_set:
